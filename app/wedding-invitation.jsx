@@ -1,3 +1,4 @@
+"use client"; 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { MapPin, Send, Heart, Volume2, VolumeX } from 'lucide-react';
 import * as Tone from 'tone';
@@ -15,9 +16,9 @@ const weddingInfo = {
   jalaliMonth: 'شهریور',
   jalaliYear: '۱۴۰۵',
   time: '۱۹:۳۰',
-  venueName: 'باغ تالار عروسی',
+  venueName: 'تالار پذیرایی راه و ماه',
   address: 'آدرس کامل محل برگزاری مراسم را اینجا وارد کنید',
-  mapLink: 'https://maps.google.com/',
+  mapLink: 'https://maps.app.goo.gl/7ou5x7RBmsp3zHqY9',
   telegramLink: 'https://t.me/m_javad77',
 };
 
