@@ -1,6 +1,7 @@
-"use client"; 
+"use client";
+
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { MapPin, Send, Heart, Volume2, VolumeX } from 'lucide-react';
+import { MapPin, Send, Heart, Volume2, VolumeX, ArrowLeft } from 'lucide-react';
 import * as Tone from 'tone';
 
 /* ============================================================
@@ -8,28 +9,45 @@ import * as Tone from 'tone';
    ============================================================ */
 const weddingInfo = {
   brideName: 'عارفه',
+  brideFamily: 'مداح‌زاده',
   groomName: 'محمدجواد',
-  // تاریخ و ساعت دقیق شروع مراسم (میلادی، معادل ۶ شهریور ۱۴۰۵)
-  weddingDateTime: '2026-08-28T19:30:00',
+  groomFamily: 'دره‌زرشکی',
+  monogram: 'MA',
+  weddingDateTime: '2026-08-28T19:00:00',
   dayName: 'جمعه',
   jalaliDay: '۶',
   jalaliMonth: 'شهریور',
   jalaliYear: '۱۴۰۵',
-  time: '۱۹:۳۰',
+  time: '۱۹:۰۰',
   venueName: 'تالار پذیرایی راه و ماه',
-  address: 'آدرس کامل محل برگزاری مراسم را اینجا وارد کنید',
-  mapLink: 'https://maps.app.goo.gl/7ou5x7RBmsp3zHqY9',
+  address: 'یزد، صفائیه، میدان ریاضی، بلوار ابن سینا، هتل راه و ماه',
+  mapLink: 'https://balad.ir/p/5sJhngNV76jR2a',
   telegramLink: 'https://t.me/m_javad77',
+  rsvpTelegramLink: 'https://t.me/m_javad77',
+  photoUrl: '',
+  galleryPhotos: [],
 };
 
+/* پالت رنگی: کِرم، سبز برگی و طلایی */
 const COLORS = {
-  wine: '#6d1a3a',
-  wineDark: '#4c1029',
-  wineLight: '#8a2249',
-  blush: '#f6e2e6',
+  wine: '#5b6b4a',
+  wineDark: '#3f4a34',
+  wineLight: '#7c8f68',
+  blush: '#eee7d6',
   gold: '#c9a24b',
-  paper: '#fdf8f4',
-  ink: '#3d1522',
+  paper: '#fffcf6',
+  ink: '#463f2e',
+};
+
+/* افکت متن ورقِ طلا برای اسم‌ها */
+const GOLD_TEXT = {
+  backgroundImage: 'linear-gradient(110deg, #9c7735 0%, #f3e0b0 22%, #c9a24b 45%, #f6e6bd 68%, #9c7735 100%)',
+  backgroundSize: '250% auto',
+  WebkitBackgroundClip: 'text',
+  backgroundClip: 'text',
+  color: 'transparent',
+  WebkitTextFillColor: 'transparent',
+  animation: 'shimmer 6s linear infinite',
 };
 
 function toFa(input) {
@@ -104,15 +122,12 @@ function useRomanticMusic() {
         Tone.Transport.start();
       }
     } catch (e) {
-      // audio unavailable — fail silently, visuals still work
       console.warn('audio unavailable', e);
     }
   }
 
   function pause() {
-    try {
-      Tone.Transport.pause();
-    } catch (e) {}
+    try { Tone.Transport.pause(); } catch (e) {}
   }
 
   function toggleMute() {
@@ -140,29 +155,146 @@ function useRomanticMusic() {
   return { start, pause, muted, toggleMute };
 }
 
-/* ---------------- decorative bits ---------------- */
+/* ---------------- botanical decoration ---------------- */
+function FlowerCluster({ x, y, scale = 1 }) {
+  const petals = Array.from({ length: 5 });
+  return (
+    <g transform={`translate(${x}, ${y}) scale(${scale})`}>
+      {petals.map((_, i) => {
+        const a = (i / 5) * 360;
+        return (
+          <ellipse key={i} cx={0} cy={-6} rx={4.2} ry={6.4} fill="#ffffff" stroke="#e7dcc4" strokeWidth="0.5"
+            transform={`rotate(${a})`} opacity="0.96" />
+        );
+      })}
+      <circle cx={0} cy={0} r={2.3} fill={COLORS.gold} opacity="0.85" />
+    </g>
+  );
+}
+
+function Wreath({ size = 260 }) {
+  const center = size / 2;
+  const leafRadius = size * 0.4;
+  const goldRingRadius = size * 0.315;
+  const photoRadius = size * 0.27;
+  const leafCount = 30;
+  const greens = ['#7ea36a', '#8fae7a', '#6f8f5c', '#b7c9a0'];
+
+  const leaves = Array.from({ length: leafCount }).map((_, i) => {
+    const angle = (i / leafCount) * 360;
+    return {
+      angle,
+      color: greens[i % greens.length],
+      scale: 0.8 + (i % 3) * 0.12,
+      tilt: i % 2 === 0 ? 14 : -14,
+    };
+  });
+
+  return (
+    <div className="relative mx-auto" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="absolute inset-0" aria-hidden="true">
+        {leaves.map((l, i) => (
+          <g key={i} transform={`translate(${center}, ${center}) rotate(${l.angle})`}>
+            <g transform={`translate(0, ${-leafRadius}) rotate(${l.tilt}) scale(${l.scale})`}>
+              <ellipse cx="0" cy="0" rx="5.4" ry="12" fill={l.color} opacity="0.88" />
+              <ellipse cx="-2" cy="3" rx="3.6" ry="8" fill={l.color} opacity="0.55" />
+            </g>
+          </g>
+        ))}
+        <FlowerCluster x={center - leafRadius * 0.62} y={center + leafRadius * 0.72} scale={1.05} />
+        <FlowerCluster x={center + leafRadius * 0.7} y={center + leafRadius * 0.58} scale={0.85} />
+        <circle cx={center} cy={center} r={goldRingRadius} fill="none" stroke={COLORS.gold} strokeWidth="1.6" opacity="0.85" />
+        <circle cx={center} cy={center} r={goldRingRadius + 4} fill="none" stroke={COLORS.gold} strokeWidth="0.8" opacity="0.4" />
+      </svg>
+
+      <div className="absolute rounded-full overflow-hidden flex items-center justify-center"
+        style={{
+          top: center - photoRadius, left: center - photoRadius,
+          width: photoRadius * 2, height: photoRadius * 2,
+          background: weddingInfo.photoUrl ? 'transparent' : 'linear-gradient(160deg, #f6f4ec, #e9e4d3)',
+          boxShadow: 'inset 0 0 0 1px rgba(201,162,75,0.25)',
+        }}>
+        {weddingInfo.photoUrl ? (
+          <img src={weddingInfo.photoUrl} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <Heart size={26} style={{ color: COLORS.gold, opacity: 0.55 }} />
+        )}
+      </div>
+    </div>
+  );
+}
+
+function GarlandBorder({ flip }) {
+  const width = 380;
+  const height = 46;
+  const clusters = 10;
+  const greens = ['#8fae7a', '#6f8f5c', '#b7c9a0', '#7ea36a'];
+  const items = Array.from({ length: clusters }).map((_, i) => {
+    const x = (i / (clusters - 1)) * width;
+    const wobble = Math.sin(i * 1.4) * 9 + 15;
+    const y = flip ? height - wobble : wobble;
+    return {
+      x, y,
+      color: greens[i % greens.length],
+      scale: 0.65 + (i % 3) * 0.16,
+      rotate: i % 2 === 0 ? 18 : -18,
+    };
+  });
+  return (
+    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none"
+      style={{ display: 'block' }} aria-hidden="true">
+      {items.map((it, i) => (
+        <g key={i} transform={`translate(${it.x}, ${it.y}) rotate(${it.rotate}) scale(${it.scale})`}>
+          <ellipse cx="0" cy="0" rx="6.5" ry="14" fill={it.color} opacity="0.85" />
+          <ellipse cx="-3" cy="4" rx="4.4" ry="9.5" fill={it.color} opacity="0.55" />
+        </g>
+      ))}
+      {items.filter((_, i) => i % 3 === 0).map((it, i) => (
+        <circle key={`f${i}`} cx={it.x} cy={flip ? it.y + 7 : it.y - 7} r="3.4" fill="#ffffff" stroke="#e7dcc4" strokeWidth="0.6" />
+      ))}
+    </svg>
+  );
+}
+
+function CornerBracket({ position }) {
+  const size = 16;
+  const base = { position: 'absolute', width: size, height: size, borderColor: COLORS.gold, opacity: 0.85 };
+  const byPos = {
+    tl: { top: -7, left: -7, borderTop: '1.4px solid', borderLeft: '1.4px solid' },
+    tr: { top: -7, right: -7, borderTop: '1.4px solid', borderRight: '1.4px solid' },
+    bl: { bottom: -7, left: -7, borderBottom: '1.4px solid', borderLeft: '1.4px solid' },
+    br: { bottom: -7, right: -7, borderBottom: '1.4px solid', borderRight: '1.4px solid' },
+  };
+  return <span aria-hidden="true" style={{ ...base, ...byPos[position], borderColor: COLORS.gold }} />;
+}
+
+function GoldSwashDivider() {
+  return (
+    <svg width="200" height="22" viewBox="0 0 200 22" className="mx-auto my-5" aria-hidden="true">
+      <path d="M0 11 C 55 11, 78 3, 100 11 C 122 19, 145 11, 200 11" stroke={COLORS.gold} strokeWidth="1.1" fill="none" opacity="0.85" />
+      <path d="M88 5 L112 17 M112 5 L88 17" stroke={COLORS.gold} strokeWidth="1.1" opacity="0.75" />
+    </svg>
+  );
+}
+
+/* ---------------- invitation UI ---------------- */
 function CountdownBlock({ value, label }) {
   return (
     <div className="flex flex-col items-center">
       <div
-        className="relative rounded-xl px-3 py-2 sm:px-4 sm:py-3 min-w-[58px] sm:min-w-[70px] text-center overflow-hidden"
+        className="relative rounded-lg px-3 py-2.5 sm:px-4 sm:py-3.5 min-w-[58px] sm:min-w-[72px] text-center overflow-hidden"
         style={{
-          background: 'linear-gradient(160deg, #ffffff, #f3e6ea)',
-          border: `1px solid ${COLORS.blush}`,
-          boxShadow: '0 6px 16px rgba(109,26,58,0.10)',
+          background: 'linear-gradient(160deg, #ffffff, #f8f4e8)',
+          border: `1px solid ${COLORS.gold}`,
+          boxShadow: '0 8px 20px rgba(91,107,74,0.14), inset 0 1px 0 rgba(255,255,255,0.9)',
         }}
       >
-        <span
-          className="absolute inset-x-0 top-0"
-          style={{ height: 2, background: `linear-gradient(90deg, transparent, ${COLORS.gold}, transparent)` }}
-        />
-        <span className="block text-xl sm:text-2xl font-bold tabular-nums" style={{ color: COLORS.wine }}>
+        <span className="absolute inset-x-0 top-0" style={{ height: 2, background: `linear-gradient(90deg, transparent, ${COLORS.gold}, transparent)` }} />
+        <span className="block text-xl sm:text-2xl font-bold tabular-nums tracking-wider" style={{ color: COLORS.wine }}>
           {toFa(pad2(value))}
         </span>
       </div>
-      <span className="mt-1.5 text-[11px] sm:text-xs" style={{ color: COLORS.wineLight }}>
-        {label}
-      </span>
+      <span className="mt-2 text-[10px] sm:text-[11px] tracking-[0.15em]" style={{ color: COLORS.wineLight }}>{label}</span>
     </div>
   );
 }
@@ -174,18 +306,6 @@ function Divider() {
       <span style={{ width: 6, height: 6, border: `1.4px solid ${COLORS.gold}`, transform: 'rotate(45deg)' }} />
       <span style={{ width: 32, height: 1, background: `linear-gradient(90deg, ${COLORS.gold}, transparent)` }} />
     </div>
-  );
-}
-
-function CornerFlourish({ mirrored }) {
-  return (
-    <svg width="64" height="64" viewBox="0 0 70 70" fill="none" aria-hidden="true"
-      style={{ transform: mirrored ? 'rotate(180deg)' : 'none' }}>
-      <path d="M5 65 C 5 40, 20 25, 45 20 C 55 18, 60 10, 62 5" stroke={COLORS.gold} strokeWidth="1.4" strokeLinecap="round" opacity="0.55" />
-      <path d="M18 56 C 24 45, 34 40, 40 31" stroke={COLORS.gold} strokeWidth="1.1" strokeLinecap="round" opacity="0.4" />
-      <circle cx="45" cy="20" r="2.6" fill={COLORS.gold} opacity="0.5" />
-      <circle cx="29" cy="46" r="1.8" fill={COLORS.gold} opacity="0.4" />
-    </svg>
   );
 }
 
@@ -217,12 +337,15 @@ function WaxSeal({ phase }) {
     <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center rounded-full transition-all duration-500"
       style={{
         bottom: '-26px', width: 60, height: 60,
-        background: 'radial-gradient(circle at 35% 30%, #e8b9c4, #c05a7a 55%, #8a2249 100%)',
+        background: 'radial-gradient(circle at 35% 30%, #f3e9d0, #d8b978 55%, #a97f3c 100%)',
+        boxShadow: '0 0 0 1.5px rgba(255,253,246,0.6), 0 6px 14px rgba(76,55,20,0.35)',
         opacity: isOpen ? 0 : 1,
         transform: `translateX(-50%) scale(${isOpen ? 0.4 : 1})`,
         animation: phase === 'closed' ? 'sealPulse 2.6s ease-in-out infinite' : 'none',
       }}>
-      <Heart size={20} color="#fdf0f2" fill="#fdf0f2" strokeWidth={1.5} />
+      <span style={{ color: '#fffdf6', fontSize: 16, fontWeight: 700, letterSpacing: 2 }}>
+        {weddingInfo.monogram.split('').join(' · ')}
+      </span>
       <Sparkles show={phase === 'opening'} />
     </div>
   );
@@ -241,13 +364,35 @@ function Envelope({ phase, onOpen }) {
           animation: phase === 'closed' ? 'floatY 3.6s ease-in-out infinite' : 'none',
         }}>
         <div className="absolute inset-0 rounded-md overflow-hidden"
-          style={{ background: `linear-gradient(155deg, ${COLORS.wineLight}, ${COLORS.wineDark})`, boxShadow: '0 18px 40px rgba(30,6,18,0.35)' }}>
+          style={{
+            background: `linear-gradient(155deg, ${COLORS.wineLight}, ${COLORS.wineDark})`,
+            boxShadow: '0 18px 40px rgba(30,36,20,0.35), inset 0 0 0 1.5px rgba(233,201,143,0.45)',
+          }}>
           <div className="absolute inset-x-0 bottom-0"
             style={{
               height: '62%',
               background: `linear-gradient(160deg, ${COLORS.wineLight}, ${COLORS.wineDark})`,
               clipPath: 'polygon(0 100%, 100% 100%, 100% 15%, 50% 60%, 0 15%)',
             }} />
+          <span aria-hidden="true" className="absolute inset-x-0 flex items-center justify-center select-none"
+            style={{
+              bottom: '10%', fontSize: 64, fontWeight: 800, letterSpacing: 6,
+              fontFamily: 'Georgia, "Times New Roman", serif',
+              color: 'rgba(255,253,246,0.18)',
+              textShadow: '0 1px 0 rgba(0,0,0,0.15)',
+            }}>
+            {weddingInfo.monogram}
+          </span>
+          <span aria-hidden="true" className="absolute inset-0"
+            style={{
+              background: 'linear-gradient(115deg, transparent 35%, rgba(255,255,255,0.16) 48%, transparent 62%)',
+              mixBlendMode: 'overlay',
+            }} />
+          <svg aria-hidden="true" width="40" height="40" viewBox="0 0 40 40" className="absolute" style={{ bottom: 8, insetInlineEnd: 10, opacity: 0.55 }}>
+            <path d="M4 36 C 6 24, 12 16, 22 12" stroke="#e9c98f" strokeWidth="1.2" fill="none" strokeLinecap="round" />
+            <ellipse cx="14" cy="22" rx="3.4" ry="6.5" fill="#e9c98f" opacity="0.7" transform="rotate(-30 14 22)" />
+            <ellipse cx="20" cy="14" rx="2.8" ry="5.4" fill="#e9c98f" opacity="0.6" transform="rotate(-15 20 14)" />
+          </svg>
         </div>
         <div className="absolute inset-x-0 top-0 transition-transform ease-in-out"
           style={{
@@ -270,8 +415,6 @@ function Envelope({ phase, onOpen }) {
 
 function InvitationCard({ visible, onReset }) {
   const { days, hours, minutes, seconds, isOver } = useCountdown(weddingInfo.weddingDateTime);
-  const brideInitial = weddingInfo.brideName?.charAt(0) || '';
-  const groomInitial = weddingInfo.groomName?.charAt(0) || '';
 
   return (
     <div className="relative w-full max-w-[420px] transition-all"
@@ -283,29 +426,45 @@ function InvitationCard({ visible, onReset }) {
         transform: visible ? 'translateY(0) scale(1)' : 'translateY(24px) scale(0.86)',
         pointerEvents: visible ? 'auto' : 'none',
       }}>
-      <div className="rounded-[26px] p-[6px]" style={{ border: `1px solid ${COLORS.gold}`, opacity: 0.9 }}>
-        <div className="relative rounded-[20px] px-6 py-9 sm:px-8 sm:py-11 text-center overflow-hidden"
-          style={{ background: COLORS.paper, boxShadow: '0 24px 60px rgba(60,15,30,0.28)', border: `1px solid ${COLORS.blush}` }}>
-          <div className="absolute top-2 right-2"><CornerFlourish /></div>
-          <div className="absolute bottom-2 left-2"><CornerFlourish mirrored /></div>
+      <div className="relative rounded-[26px] p-[6px]" style={{ border: `1px solid ${COLORS.gold}`, opacity: 0.95 }}>
+        <CornerBracket position="tl" />
+        <CornerBracket position="tr" />
+        <CornerBracket position="bl" />
+        <CornerBracket position="br" />
+        <div className="relative rounded-[20px] pb-9 sm:pb-11 text-center overflow-hidden"
+          style={{
+            background: COLORS.paper,
+            boxShadow: '0 30px 70px rgba(60,60,40,0.22), 0 8px 20px rgba(60,60,40,0.10)',
+            border: `1px solid ${COLORS.blush}`,
+          }}>
+          <div aria-hidden="true" className="absolute inset-0 pointer-events-none" style={{
+            backgroundImage: 'repeating-linear-gradient(120deg, rgba(201,162,75,0.05) 0px, rgba(201,162,75,0.05) 1px, transparent 1px, transparent 5px)',
+          }} />
 
-          <div className="relative">
-            <span className="text-xs tracking-[0.3em] uppercase" style={{ color: COLORS.gold }}>دعوت‌نامه عروسی</span>
+          <button onClick={onReset} aria-label="بازگشت به پاکت"
+            className="absolute z-10 flex items-center justify-center rounded-full transition-transform hover:scale-110"
+            style={{ top: 14, left: 14, width: 34, height: 34, color: COLORS.wine, opacity: 0.75 }}>
+            <ArrowLeft size={20} />
+          </button>
 
-            <div className="mx-auto my-4 flex items-center justify-center rounded-full"
-              style={{ width: 62, height: 62, border: `1.5px solid ${COLORS.gold}`, background: COLORS.paper, boxShadow: '0 4px 12px rgba(160,90,110,0.18)' }}>
-              <span className="text-lg font-bold" style={{ color: COLORS.wine }}>{brideInitial}</span>
-              <Heart size={9} style={{ margin: '0 5px', color: COLORS.gold }} fill={COLORS.gold} />
-              <span className="text-lg font-bold" style={{ color: COLORS.wine }}>{groomInitial}</span>
+          <GarlandBorder />
+
+          <div className="px-6 sm:px-8 -mt-2">
+            <Wreath size={230} />
+
+            <div className="mt-5 flex items-center justify-center gap-2">
+              <span style={{ width: 16, height: 1, background: COLORS.gold, opacity: 0.6 }} />
+              <span className="text-[11px] tracking-[0.3em] uppercase font-medium" style={{ color: COLORS.gold }}>دعوت‌نامه عروسی</span>
+              <span style={{ width: 16, height: 1, background: COLORS.gold, opacity: 0.6 }} />
             </div>
 
-            <div className="flex items-center justify-center gap-3">
-              <span className="text-2xl sm:text-3xl font-bold" style={{ color: COLORS.wine }}>{weddingInfo.brideName}</span>
-              <Heart size={18} style={{ color: COLORS.gold }} fill={COLORS.gold} />
-              <span className="text-2xl sm:text-3xl font-bold" style={{ color: COLORS.wine }}>{weddingInfo.groomName}</span>
+            <div className="mt-3 flex items-center justify-center gap-3">
+              <span className="text-3xl sm:text-4xl font-extrabold tracking-tight" style={GOLD_TEXT}>{weddingInfo.brideName}</span>
+              <Heart size={16} style={{ color: COLORS.gold }} fill={COLORS.gold} />
+              <span className="text-3xl sm:text-4xl font-extrabold tracking-tight" style={GOLD_TEXT}>{weddingInfo.groomName}</span>
             </div>
 
-            <Divider />
+            <GoldSwashDivider />
 
             <p className="text-sm sm:text-base leading-8" style={{ color: COLORS.ink }}>
               از میان تمام روزهای زندگی، این یکی را
@@ -350,24 +509,21 @@ function InvitationCard({ visible, onReset }) {
               </div>
               <p className="text-xs leading-6 max-w-[280px]" style={{ color: COLORS.ink, opacity: 0.85 }}>{weddingInfo.address}</p>
               <a href={weddingInfo.mapLink} target="_blank" rel="noopener noreferrer"
-                className="mt-2 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold transition-transform hover:scale-[1.03]"
-                style={{ background: COLORS.wine, color: '#fdf0f2' }}>
+                className="mt-3 inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-semibold tracking-wide transition-all hover:scale-[1.03]"
+                style={{ background: `linear-gradient(135deg, ${COLORS.wineLight}, ${COLORS.wine})`, color: '#fffdf6', boxShadow: '0 8px 18px rgba(91,107,74,0.28)' }}>
                 <MapPin size={14} /> مشاهده مسیر در نقشه
               </a>
             </div>
 
             <a href={weddingInfo.telegramLink} target="_blank" rel="noopener noreferrer"
-              className="mt-3 inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-semibold border transition-transform hover:scale-[1.03]"
-              style={{ borderColor: COLORS.gold, color: COLORS.wineDark }}>
+              className="mt-3 inline-flex items-center gap-1.5 rounded-full px-5 py-2.5 text-xs font-semibold tracking-wide border transition-all hover:scale-[1.03] hover:bg-[#c9a24b] hover:text-white"
+              style={{ borderColor: COLORS.gold, color: COLORS.wineDark, background: 'rgba(201,162,75,0.06)' }}>
               <Send size={13} /> کانال تلگرام مراسم
             </a>
+          </div>
 
-            <div className="mt-6">
-              <button onClick={onReset} className="text-[11px] underline-offset-2 hover:underline"
-                style={{ color: COLORS.wineLight, opacity: 0.7 }}>
-                بازگشت به پاکت
-              </button>
-            </div>
+          <div className="mt-8">
+            <GarlandBorder flip />
           </div>
         </div>
       </div>
@@ -384,7 +540,7 @@ function Petals() {
     duration: 11 + Math.random() * 9,
     delay: Math.random() * 12,
     drift: (Math.random() - 0.5) * 70,
-    gold: Math.random() > 0.6,
+    gold: Math.random() > 0.55,
   })), []);
 
   return (
@@ -396,9 +552,9 @@ function Petals() {
             width: p.size, height: p.size * 0.8,
             background: p.gold
               ? 'linear-gradient(135deg, #e7c98a, #c9a24b)'
-              : 'linear-gradient(135deg, #f7d3dd, #e2a7bb)',
+              : 'linear-gradient(135deg, #cfdcb9, #9fb686)',
             borderRadius: '0% 60% 60% 60%',
-            opacity: 0.7,
+            opacity: 0.65,
             '--drift': `${p.drift}px`,
             animation: `petalFall ${p.duration}s linear ${p.delay}s infinite`,
           }} />
@@ -432,34 +588,33 @@ function Twinkles() {
 }
 
 export default function WeddingInvitation() {
-  const [phase, setPhase] = useState('closed'); // closed | opening | open
-  const timerRef = useRef(null);
+  const [isOpen, setIsOpen] = useState(false);
   const music = useRomanticMusic();
 
   const handleOpen = () => {
-    if (phase !== 'closed') return;
-    setPhase('opening');
+    if (isOpen) return;
+    setIsOpen(true);
     music.start();
-    timerRef.current = setTimeout(() => setPhase('open'), 700);
   };
 
   const handleReset = () => {
-    clearTimeout(timerRef.current);
     music.pause();
-    setPhase('closed');
+    setIsOpen(false);
   };
 
-  useEffect(() => () => clearTimeout(timerRef.current), []);
+  useEffect(() => {
+    return () => {
+      music.pause();
+    };
+  }, [music]);
 
   return (
     <div dir="rtl" className="relative min-h-screen w-full flex items-center justify-center p-6 overflow-hidden"
       style={{
         fontFamily: "'Vazirmatn', Tahoma, sans-serif",
-        background: `radial-gradient(circle at 25% 18%, #fdeef2 0%, #f8d9e3 32%, #edc0d3 65%, #d9a2bf 100%)`,
+        background: `radial-gradient(circle at 25% 18%, #fffdf9 0%, #f7f4e9 32%, #eeead9 65%, #dee2c9 100%)`,
       }}>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap');
-
         @keyframes floatY { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
         @keyframes sealPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(201,162,75,0.35); } 50% { box-shadow: 0 0 0 9px rgba(201,162,75,0); } }
         @keyframes sparkleOut {
@@ -469,48 +624,49 @@ export default function WeddingInvitation() {
         }
         @keyframes blobFloat1 { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(24px, -18px) scale(1.08); } }
         @keyframes blobFloat2 { 0%, 100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-18px, 22px) scale(1.05); } }
-        @keyframes breathe { 0%, 100% { opacity: 0.35; transform: translate(-50%,-50%) scale(1); } 50% { opacity: 0.6; transform: translate(-50%,-50%) scale(1.12); } }
+        @keyframes breathe { 0%, 100% { opacity: 0.3; transform: translate(-50%,-50%) scale(1); } 50% { opacity: 0.5; transform: translate(-50%,-50%) scale(1.12); } }
         @keyframes petalFall {
           0% { transform: translateY(-10vh) translateX(0) rotate(0deg); opacity: 0; }
-          10% { opacity: 0.75; }
-          90% { opacity: 0.6; }
+          10% { opacity: 0.7; }
+          90% { opacity: 0.55; }
           100% { transform: translateY(112vh) translateX(var(--drift)) rotate(360deg); opacity: 0; }
         }
         @keyframes twinkle { 0%, 100% { opacity: 0.15; transform: scale(0.8); } 50% { opacity: 0.9; transform: scale(1.2); } }
+        @keyframes shimmer { 0% { background-position: 0% 50%; } 100% { background-position: 250% 50%; } }
       `}</style>
 
-      {/* soft romantic vignette */}
       <div aria-hidden="true" className="absolute inset-0 pointer-events-none"
-        style={{ background: 'radial-gradient(circle at 50% 45%, transparent 45%, rgba(76,16,41,0.16) 100%)' }} />
+        style={{ background: 'radial-gradient(circle at 50% 45%, transparent 45%, rgba(74,84,58,0.10) 100%)' }} />
 
-      {/* breathing glow behind everything */}
       <div aria-hidden="true" className="absolute rounded-full pointer-events-none"
         style={{
           width: 480, height: 480, top: '50%', left: '50%',
-          background: 'radial-gradient(circle, rgba(233,201,143,0.35), transparent 70%)',
+          background: 'radial-gradient(circle, rgba(233,201,143,0.32), transparent 70%)',
           filter: 'blur(20px)', animation: 'breathe 6s ease-in-out infinite',
         }} />
 
-      {/* ambient bokeh blobs */}
       <div aria-hidden="true" className="absolute rounded-full pointer-events-none"
-        style={{ width: 260, height: 260, top: '6%', left: '4%', background: COLORS.blush, opacity: 0.55, filter: 'blur(60px)', animation: 'blobFloat1 9s ease-in-out infinite' }} />
+        style={{ width: 260, height: 260, top: '6%', left: '4%', background: '#dfe6c9', opacity: 0.5, filter: 'blur(60px)', animation: 'blobFloat1 9s ease-in-out infinite' }} />
       <div aria-hidden="true" className="absolute rounded-full pointer-events-none"
         style={{ width: 220, height: 220, bottom: '8%', right: '6%', background: '#e9c98f', opacity: 0.28, filter: 'blur(70px)', animation: 'blobFloat2 11s ease-in-out infinite' }} />
 
       <Petals />
       <Twinkles />
 
-      {music.muted !== undefined && phase === 'open' && (
+      {isOpen && (
         <button onClick={music.toggleMute} aria-label="قطع یا وصل موسیقی"
           className="fixed z-50 flex items-center justify-center rounded-full transition-transform hover:scale-110"
-          style={{ top: 16, left: 16, width: 40, height: 40, background: COLORS.paper, border: `1px solid ${COLORS.blush}`, boxShadow: '0 4px 12px rgba(76,16,41,0.18)', color: COLORS.wine }}>
+          style={{ top: 16, left: 16, width: 40, height: 40, background: COLORS.paper, border: `1px solid ${COLORS.blush}`, boxShadow: '0 4px 12px rgba(74,84,58,0.18)', color: COLORS.wine }}>
           {music.muted ? <VolumeX size={17} /> : <Volume2 size={17} />}
         </button>
       )}
 
       <div className="relative z-10 w-full flex items-center justify-center" style={{ minHeight: 420 }}>
-        <Envelope phase={phase} onOpen={handleOpen} />
-        <InvitationCard visible={phase === 'open'} onReset={handleReset} />
+        {!isOpen ? (
+          <Envelope phase="closed" onOpen={handleOpen} />
+        ) : (
+          <InvitationCard visible={true} onReset={handleReset} />
+        )}
       </div>
     </div>
   );
