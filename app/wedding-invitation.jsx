@@ -14,8 +14,7 @@ const weddingInfo = {
   whatsappNumber: '989162149083',
   smsNumber: '09162149083',
   galleryPhotos: [],
-  // لینک فایل موسیقی خود را اینجا قرار دهید
-  musicFile: '/a.mp3', // فایل را در پوشه public قرار دهید
+  musicFile: '/a.mp3',
 };
 
 const COLORS = {
@@ -77,31 +76,31 @@ function useRomanticMusic() {
   const audioRef = useRef(null);
   const [muted, setMuted] = useState(false);
   const [isReady, setIsReady] = useState(false);
-  
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    
+
     const audio = new Audio();
     audio.src = weddingInfo.musicFile;
     audio.loop = true;
     audio.volume = 0.6;
     audio.preload = 'auto';
-    
+
     const handleCanPlay = () => {
       setIsReady(true);
       console.log('✅ Audio ready:', weddingInfo.musicFile);
     };
-    
+
     const handleError = (e) => {
       console.error('❌ Audio error:', e);
       console.log('Attempted to load:', weddingInfo.musicFile);
     };
-    
+
     audio.addEventListener('canplaythrough', handleCanPlay);
     audio.addEventListener('error', handleError);
-    
+
     audioRef.current = audio;
-    
+
     return () => {
       audio.removeEventListener('canplaythrough', handleCanPlay);
       audio.removeEventListener('error', handleError);
@@ -112,13 +111,13 @@ function useRomanticMusic() {
       }
     };
   }, []);
-  
+
   function start() {
     if (!audioRef.current) {
       console.warn('⚠️ Audio not initialized');
       return;
     }
-    
+
     console.log('▶️ Attempting to play:', weddingInfo.musicFile);
     audioRef.current.play()
       .then(() => console.log('✅ Playing successfully'))
@@ -235,7 +234,7 @@ function Envelope({ phase, onOpen }) {
           }}
         />
 
-        {/* بدنه اصلی پاکت */}
+        {/* بدنه اصلی پاکت - با رنگ‌های غنی‌تر و واقعی‌تر */}
         <div
           className="absolute inset-0 overflow-hidden"
           style={{
@@ -244,17 +243,18 @@ function Envelope({ phase, onOpen }) {
               linear-gradient(
                 160deg,
                 #e8ddc8 0%,
-                #c4b59a 25%,
-                #a89778 50%,
-                #8d7d61 75%,
-                #7a6b52 100%
+                #d4c5a6 20%,
+                #b8a587 45%,
+                #9f8a6b 70%,
+                #887555 100%
               )
             `,
             boxShadow: `
-              inset 0 2px 12px rgba(255,255,255,.5),
-              inset 0 -12px 30px rgba(0,0,0,.2),
-              0 30px 80px rgba(0,0,0,.3),
-              0 0 0 2px rgba(201,162,75,0.3)
+              inset 0 2px 20px rgba(255,245,210,0.5),
+              inset 0 -15px 30px rgba(0,0,0,.2),
+              0 30px 60px rgba(0,0,0,.25),
+              0 0 0 2px rgba(201,162,75,0.3),
+              0 0 0 8px rgba(201,162,75,0.08)
             `,
             transform: 'translateZ(0)',
             transition: 'all 0.5s ease'
@@ -293,18 +293,155 @@ function Envelope({ phase, onOpen }) {
             }}
           />
 
-          {/* حاشیه طلایی برجسته */}
+          {/* حاشیه طلایی برجسته - ضخیم‌تر و درخشان‌تر */}
           <div
             className="absolute inset-3 rounded-[22px]"
             style={{
-              border: '1.5px solid rgba(201,162,75,0.3)',
-              boxShadow: 'inset 0 0 40px rgba(201,162,75,0.08)'
+              border: '2px solid rgba(201,162,75,0.4)',
+              boxShadow: 'inset 0 0 60px rgba(201,162,75,0.12), 0 0 30px rgba(201,162,75,0.05)',
             }}
           />
 
-          {/* نوشته روی پاکت */}
+          {/* حاشیه داخلی دوم برای عمق بیشتر */}
+          <div
+            className="absolute inset-6 rounded-[18px]"
+            style={{
+              border: '1px solid rgba(201,162,75,0.15)',
+            }}
+          />
+
+          {/* ===== مهر موم در پایین پاکت (جایی که باید باشد) ===== */}
+          <div
+            className="absolute left-1/2"
+            style={{
+              bottom: 20,
+              transform: 'translateX(-50%)',
+              width: 85,
+              height: 85,
+              borderRadius: '50%',
+              background: `
+                radial-gradient(
+                  circle at 35% 28%,
+                  #ffdd9a 0%,
+                  #e7b44a 30%,
+                  #c7902a 55%,
+                  #9f741c 80%,
+                  #7a5510 100%
+                )
+              `,
+              boxShadow: `
+                0 12px 40px rgba(0,0,0,.35),
+                inset 0 -10px 25px rgba(0,0,0,.25),
+                inset 0 10px 25px rgba(255,255,200,.35),
+                0 0 0 8px rgba(255,250,235,.2),
+                0 0 0 16px rgba(201,162,75,.08)
+              `,
+              opacity: phase === 'closed' ? 1 : 0,
+              scale: phase === 'closed' ? 1 : 0.1,
+              transition: 'all 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              zIndex: 8,
+              border: '2px solid rgba(201,162,75,0.2)',
+            }}
+          >
+            {/* نور روی مهر */}
+            <div
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: 'radial-gradient(circle at 30% 25%, rgba(255,255,200,.3), transparent 60%)'
+              }}
+            />
+
+            {/* حاشیه داخلی مهر */}
+            <div
+              className="absolute inset-[6px] rounded-full"
+              style={{
+                border: '1.5px solid rgba(201,162,75,0.2)'
+              }}
+            />
+
+            {/* حاشیه داخلی دوم */}
+            <div
+              className="absolute inset-[14px] rounded-full"
+              style={{
+                border: '1px solid rgba(201,162,75,0.15)'
+              }}
+            />
+
+            {/* حاشیه داخلی سوم برای عمق */}
+            <div
+              className="absolute inset-[22px] rounded-full"
+              style={{
+                border: '0.5px solid rgba(201,162,75,0.1)'
+              }}
+            />
+
+            {/* متن روی مهر */}
+            <div
+              className="w-full h-full flex items-center justify-center flex-col"
+              style={{
+                color: '#fffcf0',
+                textShadow: '0 2px 12px rgba(0,0,0,.5), 0 0 30px rgba(201,162,75,.1)',
+                fontFamily: '"Georgia", serif',
+                position: 'relative',
+                zIndex: 2,
+              }}
+            >
+              <span style={{ fontSize: 20, fontWeight: 900, letterSpacing: 2 }}>
+                M🤍A
+              </span>
+              <span style={{ fontSize: 7, letterSpacing: 5, opacity: 0.7, marginTop: 2 }}>
+                ♥ 2026 ♥
+              </span>
+            </div>
+
+            {/* نقاط تزیینی دور مهر */}
+            {[0, 51, 102, 153, 204, 255, 306].map((deg, i) => (
+              <span
+                key={i}
+                className="absolute rounded-full"
+                style={{
+                  width: 3.5,
+                  height: 3.5,
+                  background: 'rgba(201,162,75,0.35)',
+                  left: '50%',
+                  top: '50%',
+                  transform: `rotate(${deg}deg) translateX(-50%) translateY(-${36}px)`
+                }}
+              />
+            ))}
+
+            {/* نقاط کوچک‌تر دور مهر */}
+            {[25, 76, 127, 178, 229, 280, 331].map((deg, i) => (
+              <span
+                key={i}
+                className="absolute rounded-full"
+                style={{
+                  width: 2,
+                  height: 2,
+                  background: 'rgba(201,162,75,0.2)',
+                  left: '50%',
+                  top: '50%',
+                  transform: `rotate(${deg}deg) translateX(-50%) translateY(-${30}px)`
+                }}
+              />
+            ))}
+
+            {/* برجستگی مرکزی مهر */}
+            <div
+              className="absolute inset-[30px] rounded-full"
+              style={{
+                background: 'radial-gradient(circle at 50% 40%, rgba(255,220,150,0.2), transparent 70%)',
+              }}
+            />
+          </div>
+
+          {/* نوشته روی پاکت - با رنگ‌های گرم‌تر و موقعیت مناسب */}
           <div
             className="absolute inset-0 flex flex-col items-center justify-center"
+            style={{
+              opacity: phase === 'closed' ? 0.8 : 1,
+              transition: 'opacity 0.5s ease'
+            }}
           >
             <div className="flex items-center gap-1 mb-2">
               <Star size={12} style={{ color: COLORS.gold, opacity: 0.5 }} />
@@ -314,12 +451,12 @@ function Envelope({ phase, onOpen }) {
 
             <span
               style={{
-                color: 'rgba(255,250,235,.85)',
+                color: 'rgba(255,248,230,.9)',
                 fontSize: 12,
-                letterSpacing: 6,
+                letterSpacing: 7,
                 fontWeight: 300,
                 textTransform: 'uppercase',
-                textShadow: '0 1px 4px rgba(0,0,0,0.2)'
+                textShadow: '0 1px 8px rgba(0,0,0,0.15)'
               }}
             >
               Wedding Invitation
@@ -330,17 +467,17 @@ function Envelope({ phase, onOpen }) {
                 marginTop: 10,
                 width: 160,
                 height: 1.5,
-                background: 'linear-gradient(90deg, transparent, #d6b35c, transparent)'
+                background: 'linear-gradient(90deg, transparent, #d9b85e, transparent)'
               }}
             />
 
             <strong
               style={{
                 marginTop: 16,
-                fontSize: 22,
-                color: '#fff9e8',
+                fontSize: 24,
+                color: '#fffbf0',
                 fontFamily: '"Georgia", serif',
-                textShadow: '0 2px 12px rgba(0,0,0,.25)',
+                textShadow: '0 2px 16px rgba(0,0,0,.2)',
                 letterSpacing: 2
               }}
             >
@@ -361,7 +498,7 @@ function Envelope({ phase, onOpen }) {
                 marginTop: 6,
                 color: 'rgba(255,250,235,.5)',
                 fontSize: 10,
-                letterSpacing: 3,
+                letterSpacing: 4,
                 fontWeight: 300
               }}
             >
@@ -369,26 +506,34 @@ function Envelope({ phase, onOpen }) {
             </span>
           </div>
 
-          {/* نور روی کاغذ */}
+          {/* نور روی کاغذ - درخشان‌تر */}
           <div
             className="absolute inset-0"
             style={{
-              background: 'linear-gradient(120deg, transparent 20%, rgba(255,255,255,.15), transparent 60%)',
-              animation: 'paperShine 5s infinite'
+              background: 'linear-gradient(120deg, transparent 20%, rgba(255,255,200,.12), transparent 60%)',
+              animation: 'paperShine 5s infinite',
+              borderRadius: 18,
             }}
           />
 
-          {/* خطوط تا */}
+          {/* خطوط تا - واقعی‌تر */}
           <div
             className="absolute bottom-0 left-0 right-0"
             style={{
               height: 1.5,
-              background: 'linear-gradient(90deg, transparent, rgba(0,0,0,.1), transparent)'
+              background: 'linear-gradient(90deg, transparent, rgba(0,0,0,.08), transparent)'
+            }}
+          />
+          <div
+            className="absolute top-0 left-0 right-0"
+            style={{
+              height: 1.5,
+              background: 'linear-gradient(90deg, transparent, rgba(255,255,240,.08), transparent)'
             }}
           />
         </div>
 
-        {/* درب پاکت */}
+        {/* درب پاکت - با رنگ‌های هماهنگ‌تر */}
         <div
           className="absolute top-0 left-0 right-0"
           style={{
@@ -399,15 +544,15 @@ function Envelope({ phase, onOpen }) {
             transition: 'transform 1s cubic-bezier(0.2,1,0.3,1)',
             background: `
               linear-gradient(
-                170deg,
-                #d8ccb8 0%,
-                #b8aa92 40%,
-                #9f8d70 80%,
-                #8b795a 100%
+                165deg,
+                #cfc0a8 0%,
+                #b6a387 40%,
+                #9f8b6e 75%,
+                #8a785b 100%
               )
             `,
             clipPath: 'polygon(0 0, 100% 0, 50% 100%)',
-            boxShadow: isOpen ? 'none' : '0 20px 40px rgba(0,0,0,.2)',
+            boxShadow: isOpen ? 'none' : '0 20px 40px rgba(0,0,0,.15)',
             zIndex: 5,
             borderRadius: '28px 28px 0 0'
           }}
@@ -424,9 +569,9 @@ function Envelope({ phase, onOpen }) {
           <div
             className="absolute left-1/2 top-0"
             style={{
-              width: 1,
+              width: 1.5,
               height: '80%',
-              background: 'linear-gradient(rgba(255,255,255,.3), transparent)'
+              background: 'linear-gradient(rgba(255,255,240,.25), transparent)'
             }}
           />
 
@@ -434,87 +579,138 @@ function Envelope({ phase, onOpen }) {
           <div
             className="absolute left-1/2 top-[40%] -translate-x-1/2"
             style={{
-              width: 30,
-              height: 30,
-              border: '1px solid rgba(201,162,75,0.15)',
+              width: 32,
+              height: 32,
+              border: '1.2px solid rgba(201,162,75,0.15)',
               borderRadius: '50%',
               transform: 'translateX(-50%) rotate(45deg)'
             }}
           />
+
+          {/* خطوط تزئینی روی درب */}
+          <div
+            className="absolute left-1/2 top-[25%] -translate-x-1/2"
+            style={{
+              width: 60,
+              height: 1,
+              background: 'linear-gradient(90deg, transparent, rgba(201,162,75,0.1), transparent)'
+            }}
+          />
+          <div
+            className="absolute left-1/2 top-[55%] -translate-x-1/2"
+            style={{
+              width: 60,
+              height: 1,
+              background: 'linear-gradient(90deg, transparent, rgba(201,162,75,0.1), transparent)'
+            }}
+          />
         </div>
 
-        {/* مهر موم */}
+        {/* مهر پایین پاکت هنگام باز شدن - در همان موقعیت پایین */}
         <div
           className="absolute left-1/2"
           style={{
-            bottom: -32,
+            bottom: 20,
             transform: 'translateX(-50%)',
-            width: 76,
-            height: 76,
+            width: 85,
+            height: 85,
             borderRadius: '50%',
             background: `
               radial-gradient(
-                circle at 35% 30%,
-                #ffdca0 0%,
-                #e8b84a 30%,
-                #c99632 55%,
-                #a67a28 75%,
-                #8b641c 100%
+                circle at 35% 28%,
+                #ffdd9a 0%,
+                #e7b44a 30%,
+                #c7902a 55%,
+                #9f741c 80%,
+                #7a5510 100%
               )
             `,
             boxShadow: `
-              0 12px 35px rgba(0,0,0,.4),
-              inset 0 -10px 15px rgba(0,0,0,.25),
-              inset 0 8px 15px rgba(255,255,255,.35),
-              0 0 0 8px rgba(255,253,246,.15),
-              0 0 0 16px rgba(201,162,75,.05)
+              0 12px 40px rgba(0,0,0,.35),
+              inset 0 -10px 25px rgba(0,0,0,.25),
+              inset 0 10px 25px rgba(255,255,200,.35),
+              0 0 0 8px rgba(255,250,235,.2),
+              0 0 0 16px rgba(201,162,75,.08)
             `,
-            opacity: isOpen ? 0 : 1,
-            scale: isOpen ? 0.1 : 1,
+            opacity: isOpen ? 1 : 0,
+            scale: isOpen ? 1 : 0.1,
             transition: 'all 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)',
-            zIndex: 15
+            zIndex: 15,
+            border: '2px solid rgba(201,162,75,0.2)'
           }}
         >
           <div
             className="absolute inset-0 rounded-full"
             style={{
-              background: 'radial-gradient(circle at 30% 25%, rgba(255,255,255,.2), transparent 60%)'
-            }}
-          />
-          
-          <div
-            className="absolute inset-[4px] rounded-full"
-            style={{
-              border: '1px solid rgba(201,162,75,0.2)'
+              background: 'radial-gradient(circle at 30% 25%, rgba(255,255,200,.25), transparent 60%)'
             }}
           />
 
           <div
-            className="w-full h-full flex items-center justify-center"
+            className="absolute inset-[6px] rounded-full"
             style={{
-              color: '#fffdf6',
-              fontWeight: 900,
-              fontSize: 18,
-              textShadow: '0 2px 8px rgba(0,0,0,.4)',
-              letterSpacing: 3,
-              fontFamily: '"Georgia", serif'
+              border: '1.5px solid rgba(201,162,75,0.2)'
+            }}
+          />
+
+          <div
+            className="absolute inset-[14px] rounded-full"
+            style={{
+              border: '1px solid rgba(201,162,75,0.15)'
+            }}
+          />
+
+          <div
+            className="absolute inset-[22px] rounded-full"
+            style={{
+              border: '0.5px solid rgba(201,162,75,0.1)'
+            }}
+          />
+
+          <div
+            className="w-full h-full flex items-center justify-center flex-col"
+            style={{
+              color: '#fffcf0',
+              textShadow: '0 2px 12px rgba(0,0,0,.5), 0 0 30px rgba(201,162,75,.1)',
+              fontFamily: '"Georgia", serif',
+              position: 'relative',
+              zIndex: 2,
             }}
           >
-           M🤍A
+            <span style={{ fontSize: 20, fontWeight: 900, letterSpacing: 2 }}>
+              M🤍A
+            </span>
+            <span style={{ fontSize: 7, letterSpacing: 5, opacity: 0.7, marginTop: 2 }}>
+              ♥ 2026 ♥
+            </span>
           </div>
-          
-          {/* نقاط تزیینی دور مهر */}
-          {[0, 72, 144, 216, 288].map((deg, i) => (
+
+          {/* نقاط تزیینی دور مهر پایین */}
+          {[0, 51, 102, 153, 204, 255, 306].map((deg, i) => (
             <span
               key={i}
               className="absolute rounded-full"
               style={{
-                width: 3,
-                height: 3,
-                background: 'rgba(201,162,75,0.3)',
+                width: 3.5,
+                height: 3.5,
+                background: 'rgba(201,162,75,0.35)',
                 left: '50%',
                 top: '50%',
-                transform: `rotate(${deg}deg) translateX(-50%) translateY(-${32}px)`
+                transform: `rotate(${deg}deg) translateX(-50%) translateY(-${36}px)`
+              }}
+            />
+          ))}
+          {[25, 76, 127, 178, 229, 280, 331].map((deg, i) => (
+            <span
+              key={i}
+              className="absolute rounded-full"
+              style={{
+                width: 2,
+                height: 2,
+                background: 'rgba(201,162,75,0.2)',
+                left: '50%',
+                top: '50%',
+                transform: `rotate(${deg}deg) translateX(-50%) translateY(-${30}px)`
               }}
             />
           ))}
@@ -553,12 +749,12 @@ function Envelope({ phase, onOpen }) {
 function MessageSender() {
   const [message, setMessage] = useState('');
   const [showOptions, setShowOptions] = useState(false);
-  
+
   const handleSend = (method) => {
     const text = message.trim() || 'سلام، من در مراسم شما حضور خواهم داشت';
     const encoded = encodeURIComponent(text);
-    
-    switch(method) {
+
+    switch (method) {
       case 'sms':
         window.location.href = `sms:${weddingInfo.smsNumber}?body=${encoded}`;
         break;
@@ -575,7 +771,7 @@ function MessageSender() {
         break;
     }
   };
-  
+
   return (
     <div className="w-full flex flex-col gap-3">
       <textarea
@@ -593,7 +789,7 @@ function MessageSender() {
         }}
         rows="2"
       />
-      
+
       <div className="flex flex-wrap items-center gap-2">
         <button
           onClick={() => setShowOptions(!showOptions)}
@@ -607,7 +803,7 @@ function MessageSender() {
           <Send size={16} />
           ارسال پیام
         </button>
-        
+
         {showOptions && (
           <div className="flex flex-wrap items-center gap-2 w-full mt-2 animate-fadeIn">
             <button
@@ -668,7 +864,7 @@ function MessageSender() {
 /* ---------------- کارت دعوت ---------------- */
 function InvitationCard({ visible, onReset }) {
   const { days, hours, minutes, seconds, isOver } = useCountdown(weddingInfo.weddingDateTime);
-  
+
   return (
     <div
       className="relative w-full max-w-[460px] transition-all"
@@ -693,7 +889,7 @@ function InvitationCard({ visible, onReset }) {
         <CornerBracket position="tr" />
         <CornerBracket position="bl" />
         <CornerBracket position="br" />
-        
+
         <div className="relative rounded-2xl overflow-hidden" style={{
           boxShadow: '0 40px 80px rgba(60,60,40,0.25), 0 8px 24px rgba(60,60,40,0.12)'
         }}>
@@ -714,7 +910,7 @@ function InvitationCard({ visible, onReset }) {
           >
             <ArrowLeft size={18} />
           </button>
-          
+
           <img
             src={INVITE_IMAGE}
             alt="دعوت‌نامه عروسی عارفه و محمدجواد"
@@ -722,7 +918,7 @@ function InvitationCard({ visible, onReset }) {
             className="w-full block select-none"
             style={{ userSelect: 'none' }}
           />
-          
+
           <div className="w-full py-6 px-6 flex flex-col items-center" style={{
             background: `linear-gradient(180deg, ${COLORS.paper}, #f8f4ec)`,
             borderTop: `2px solid ${COLORS.blush}`
@@ -754,7 +950,7 @@ function InvitationCard({ visible, onReset }) {
               </div>
             )}
           </div>
-          
+
           <div className="flex flex-col items-center gap-4 py-6 px-6" style={{
             background: `linear-gradient(0deg, ${COLORS.paper}, #faf8f4)`,
             borderTop: `1px solid ${COLORS.blush}`
@@ -787,7 +983,7 @@ function InvitationCard({ visible, onReset }) {
                 <Navigation size={13} /> بلد
               </a>
             </div>
-            
+
             <MessageSender />
           </div>
         </div>
@@ -800,7 +996,7 @@ function InvitationCard({ visible, onReset }) {
 function PhotoGallery() {
   const hasPhotos = weddingInfo.galleryPhotos.length > 0;
   const items = hasPhotos ? weddingInfo.galleryPhotos : [0, 1, 2, 3];
-  
+
   return (
     <div className="relative z-10 w-full flex flex-col items-center px-4 py-16 sm:py-20" style={{
       background: 'linear-gradient(180deg, transparent, rgba(201,162,75,0.06))'
@@ -852,7 +1048,7 @@ function Petals() {
     gold: Math.random() > 0.6,
     rotate: Math.random() * 360,
   })), []);
-  
+
   return (
     <>
       {petals.map((p) => (
@@ -884,7 +1080,7 @@ function Twinkles() {
     delay: Math.random() * 6,
     duration: 3 + Math.random() * 4,
   })), []);
-  
+
   return (
     <>
       {stars.map((s) => (
@@ -904,22 +1100,22 @@ export default function WeddingInvitation() {
   const [phase, setPhase] = useState('closed');
   const timerRef = useRef(null);
   const music = useRomanticMusic();
-  
+
   const handleOpen = () => {
     if (phase !== 'closed') return;
     setPhase('opening');
     music.start();
     timerRef.current = setTimeout(() => setPhase('open'), 800);
   };
-  
+
   const handleReset = () => {
     clearTimeout(timerRef.current);
     music.pause();
     setPhase('closed');
   };
-  
+
   useEffect(() => () => clearTimeout(timerRef.current), []);
-  
+
   return (
     <div dir="rtl" className="relative w-full min-h-screen overflow-x-hidden" style={{ fontFamily: "'Vazirmatn', Tahoma, sans-serif" }}>
       <style>{`
@@ -970,7 +1166,7 @@ export default function WeddingInvitation() {
           animation: fadeIn 0.3s ease-out forwards;
         }
       `}</style>
-      
+
       <div className="relative min-h-screen w-full flex items-center justify-center p-4 sm:p-6 overflow-hidden" style={{
         background: `
           radial-gradient(ellipse at 20% 20%, #fffdf9 0%, #f7f4e9 30%, #eeead9 60%, #d6dcc4 100%)
@@ -980,14 +1176,14 @@ export default function WeddingInvitation() {
         <div aria-hidden="true" className="absolute inset-0 pointer-events-none" style={{
           background: 'radial-gradient(circle at 50% 45%, transparent 45%, rgba(74,84,58,0.06) 100%)'
         }} />
-        
+
         <div aria-hidden="true" className="absolute rounded-full pointer-events-none" style={{
           width: 600, height: 600, top: '50%', left: '50%',
           background: 'radial-gradient(circle, rgba(233,201,143,0.2), transparent 70%)',
           filter: 'blur(30px)',
           animation: 'breathe 8s ease-in-out infinite',
         }} />
-        
+
         <div aria-hidden="true" className="absolute rounded-full pointer-events-none" style={{
           width: 300, height: 300, top: '4%', left: '2%',
           background: 'radial-gradient(circle, #dfe6c9, transparent 70%)',
@@ -995,7 +1191,7 @@ export default function WeddingInvitation() {
           filter: 'blur(70px)',
           animation: 'blobFloat1 10s ease-in-out infinite'
         }} />
-        
+
         <div aria-hidden="true" className="absolute rounded-full pointer-events-none" style={{
           width: 250, height: 250, bottom: '6%', right: '4%',
           background: 'radial-gradient(circle, #e9c98f, transparent 70%)',
@@ -1003,10 +1199,10 @@ export default function WeddingInvitation() {
           filter: 'blur(80px)',
           animation: 'blobFloat2 12s ease-in-out infinite'
         }} />
-        
+
         <Petals />
         <Twinkles />
-        
+
         {/* دکمه قطع/وصل موسیقی */}
         {phase === 'open' && (
           <button
@@ -1027,14 +1223,14 @@ export default function WeddingInvitation() {
             {music.muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
           </button>
         )}
-        
+
         {/* محتوای اصلی */}
         <div className="relative z-10 w-full flex items-center justify-center" style={{ minHeight: 460 }}>
           <Envelope phase={phase} onOpen={handleOpen} />
           <InvitationCard visible={phase === 'open'} onReset={handleReset} />
         </div>
       </div>
-      
+
       {/* گالری */}
       {phase === 'open' && <PhotoGallery />}
     </div>
