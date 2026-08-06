@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { MapPin, Send, Heart, Volume2, VolumeX, ArrowLeft, Navigation, MessageCircle, Share2, Phone, Sparkles as SparklesIcon, Star, X, ChevronRight, ChevronLeft, ShieldCheck } from 'lucide-react';';
 
 /* ============================================================
    اطلاعات مراسم
