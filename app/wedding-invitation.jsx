@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { MapPin, Send, Heart, Volume2, VolumeX, ArrowLeft, Navigation, MessageCircle, Share2, Phone, Mail, Sparkles as SparklesIcon, Star, Flower } from 'lucide-react';
+import { MapPin, Send, Heart, Volume2, VolumeX, ArrowLeft, Navigation, MessageCircle, Share2, Phone, Sparkles as SparklesIcon, Star, X, ChevronRight, ChevronLeft, ShieldCheck } from 'lucide-react';
 
 /* ============================================================
    اطلاعات مراسم
@@ -17,7 +17,7 @@ const weddingInfo = {
     '/images/a.webp',
     '/images/b.webp',
     '/images/c.webp',
-  ], 
+  ],
   musicFile: '/a.mp3',
 };
 
@@ -91,19 +91,11 @@ function useRomanticMusic() {
     audio.volume = 0.6;
     audio.preload = 'auto';
 
-    const handleCanPlay = () => {
-      setIsReady(true);
-      console.log('✅ Audio ready:', weddingInfo.musicFile);
-    };
-
-    const handleError = (e) => {
-      console.error('❌ Audio error:', e);
-      console.log('Attempted to load:', weddingInfo.musicFile);
-    };
+    const handleCanPlay = () => setIsReady(true);
+    const handleError = (e) => console.error('Audio error:', e);
 
     audio.addEventListener('canplaythrough', handleCanPlay);
     audio.addEventListener('error', handleError);
-
     audioRef.current = audio;
 
     return () => {
@@ -118,36 +110,19 @@ function useRomanticMusic() {
   }, []);
 
   function start() {
-    if (!audioRef.current) {
-      console.warn('⚠️ Audio not initialized');
-      return;
+    if (audioRef.current) {
+      audioRef.current.play().catch(err => console.warn('Play blocked:', err));
     }
-
-    console.log('▶️ Attempting to play:', weddingInfo.musicFile);
-    audioRef.current.play()
-      .then(() => console.log('✅ Playing successfully'))
-      .catch(err => {
-        console.warn('⚠️ Play failed:', err);
-        if (err.name === 'NotAllowedError') {
-          console.log('🔄 Autoplay blocked, will retry on user interaction');
-        }
-      });
   }
 
   function pause() {
-    if (audioRef.current) {
-      audioRef.current.pause();
-      console.log('⏸️ Paused');
-    }
+    if (audioRef.current) audioRef.current.pause();
   }
 
   function toggleMute() {
     setMuted((m) => {
       const next = !m;
-      if (audioRef.current) {
-        audioRef.current.muted = next;
-        console.log(`🔊 ${next ? 'Muted' : 'Unmuted'}`);
-      }
+      if (audioRef.current) audioRef.current.muted = next;
       return next;
     });
   }
@@ -155,7 +130,7 @@ function useRomanticMusic() {
   return { start, pause, muted, toggleMute, isReady };
 }
 
-/* ---------------- envelope artwork ---------------- */
+/* ---------------- artwork components ---------------- */
 function CornerBracket({ position }) {
   const size = 16;
   const base = { position: 'absolute', width: size, height: size, borderColor: COLORS.gold, opacity: 0.85 };
@@ -175,29 +150,6 @@ function Divider() {
       <span style={{ width: 6, height: 6, border: `1.4px solid ${COLORS.gold}`, transform: 'rotate(45deg)' }} />
       <span style={{ width: 32, height: 1, background: `linear-gradient(90deg, ${COLORS.gold}, transparent)` }} />
     </div>
-  );
-}
-
-function Sparkles({ show }) {
-  if (!show) return null;
-  const points = Array.from({ length: 16 }).map((_, i) => {
-    const angle = (i / 16) * Math.PI * 2;
-    const radius = 65;
-    return { dx: Math.cos(angle) * radius, dy: Math.sin(angle) * radius, delay: i * 25 };
-  });
-  return (
-    <>
-      {points.map((p, i) => (
-        <span key={i} className="absolute rounded-full"
-          style={{
-            left: '50%', bottom: '-28px', width: 8, height: 8, marginLeft: -4,
-            background: `radial-gradient(circle, ${COLORS.goldLight}, ${COLORS.gold})`,
-            boxShadow: `0 0 20px ${COLORS.gold}`,
-            '--dx': `${p.dx}px`, '--dy': `${p.dy}px`,
-            animation: `sparkleOut 800ms ease-out ${p.delay}ms forwards`,
-          }} />
-      ))}
-    </>
   );
 }
 
@@ -222,12 +174,9 @@ function Envelope({ phase, onOpen }) {
           height: 280,
           maxWidth: '92vw',
           transformStyle: 'preserve-3d',
-          animation: phase === 'closed'
-            ? 'floatY 4s ease-in-out infinite'
-            : 'none'
+          animation: phase === 'closed' ? 'floatY 4s ease-in-out infinite' : 'none'
         }}
       >
-        {/* سایه زیر پاکت */}
         <div
           className="absolute inset-0"
           style={{
@@ -239,7 +188,6 @@ function Envelope({ phase, onOpen }) {
           }}
         />
 
-        {/* بدنه اصلی پاکت - سبز زمردی عمیق و طلایی، واقعی‌تر و جذاب‌تر */}
         <div
           className="absolute inset-0 overflow-hidden"
           style={{
@@ -265,7 +213,6 @@ function Envelope({ phase, onOpen }) {
             transition: 'all 0.5s ease'
           }}
         >
-          {/* الگوی تزئینی پشت پاکت */}
           <div
             className="absolute inset-0 opacity-10"
             style={{
@@ -277,28 +224,16 @@ function Envelope({ phase, onOpen }) {
             }}
           />
 
-          {/* بافت کاغذ */}
           <div
             className="absolute inset-0"
             style={{
               backgroundImage: `
-                repeating-linear-gradient(
-                  0deg,
-                  rgba(255,255,255,.04) 0px,
-                  transparent 2px,
-                  transparent 6px
-                ),
-                repeating-linear-gradient(
-                  90deg,
-                  rgba(0,0,0,.05) 0px,
-                  transparent 3px,
-                  transparent 8px
-                )
+                repeating-linear-gradient(0deg, rgba(255,255,255,.04) 0px, transparent 2px, transparent 6px),
+                repeating-linear-gradient(90deg, rgba(0,0,0,.05) 0px, transparent 3px, transparent 8px)
               `
             }}
           />
 
-          {/* درز پایین پاکت — لبه‌ی تای پشت، برای واقعی‌تر شدن */}
           <div
             className="absolute inset-x-0 bottom-0"
             style={{
@@ -309,14 +244,12 @@ function Envelope({ phase, onOpen }) {
               pointerEvents: 'none',
             }}
           />
-          {/* خط درز دو طرفِ تای پشت */}
           <svg className="absolute inset-0 pointer-events-none" width="100%" height="100%" viewBox="0 0 400 280" preserveAspectRatio="none" aria-hidden="true">
             <path d="M0 56 L200 174 L400 56" fill="none" stroke="rgba(201,162,75,0.28)" strokeWidth="1" />
             <path d="M0 280 L200 174" fill="none" stroke="rgba(0,0,0,0.12)" strokeWidth="1" />
             <path d="M400 280 L200 174" fill="none" stroke="rgba(0,0,0,0.12)" strokeWidth="1" />
           </svg>
 
-          {/* حاشیه طلایی برجسته - ضخیم‌تر و درخشان‌تر */}
           <div
             className="absolute inset-3 rounded-[22px]"
             style={{
@@ -325,15 +258,11 @@ function Envelope({ phase, onOpen }) {
             }}
           />
 
-          {/* حاشیه داخلی دوم برای عمق بیشتر */}
           <div
             className="absolute inset-6 rounded-[18px]"
-            style={{
-              border: '1px solid rgba(201,162,75,0.22)',
-            }}
+            style={{ border: '1px solid rgba(201,162,75,0.22)' }}
           />
 
-          {/* ===== مهر موم در پایین پاکت - با رنگ سبز موم هماهنگ با پاکت ===== */}
           <div
             className="absolute left-1/2"
             style={{
@@ -366,7 +295,6 @@ function Envelope({ phase, onOpen }) {
               border: '2px solid rgba(201,162,75,0.25)',
             }}
           >
-            {/* قطره‌های موم دور لبه برای حس دست‌ساز و واقعی */}
             {[18, 96, 172, 250, 314].map((deg, i) => (
               <span
                 key={`drip-${i}`}
@@ -383,40 +311,11 @@ function Envelope({ phase, onOpen }) {
               />
             ))}
 
-            {/* نور روی مهر */}
-            <div
-              className="absolute inset-0"
-              style={{
-                borderRadius: 'inherit',
-                background: 'radial-gradient(circle at 30% 25%, rgba(200,255,180,.25), transparent 60%)'
-              }}
-            />
+            <div className="absolute inset-0" style={{ borderRadius: 'inherit', background: 'radial-gradient(circle at 30% 25%, rgba(200,255,180,.25), transparent 60%)' }} />
+            <div className="absolute inset-[6px] rounded-full" style={{ border: '1.5px solid rgba(201,162,75,0.22)' }} />
+            <div className="absolute inset-[14px] rounded-full" style={{ border: '1px solid rgba(201,162,75,0.16)' }} />
+            <div className="absolute inset-[22px] rounded-full" style={{ border: '0.5px solid rgba(201,162,75,0.1)' }} />
 
-            {/* حاشیه داخلی مهر */}
-            <div
-              className="absolute inset-[6px] rounded-full"
-              style={{
-                border: '1.5px solid rgba(201,162,75,0.22)'
-              }}
-            />
-
-            {/* حاشیه داخلی دوم */}
-            <div
-              className="absolute inset-[14px] rounded-full"
-              style={{
-                border: '1px solid rgba(201,162,75,0.16)'
-              }}
-            />
-
-            {/* حاشیه داخلی سوم برای عمق */}
-            <div
-              className="absolute inset-[22px] rounded-full"
-              style={{
-                border: '0.5px solid rgba(201,162,75,0.1)'
-              }}
-            />
-
-            {/* متن روی مهر - با رنگ طلایی برجسته */}
             <div
               className="w-full h-full flex items-center justify-center flex-col"
               style={{
@@ -427,56 +326,11 @@ function Envelope({ phase, onOpen }) {
                 zIndex: 2,
               }}
             >
-              <span style={{ fontSize: 20, fontWeight: 900, letterSpacing: 2 }}>
-                M🤍A
-              </span>
-              <span style={{ fontSize: 7, letterSpacing: 5, opacity: 0.7, marginTop: 2 }}>
-                ♥ 2026 ♥
-              </span>
+              <span style={{ fontSize: 20, fontWeight: 900, letterSpacing: 2 }}>M🤍A</span>
+              <span style={{ fontSize: 7, letterSpacing: 5, opacity: 0.7, marginTop: 2 }}>♥ 2026 ♥</span>
             </div>
-
-            {/* نقاط تزیینی دور مهر */}
-            {[0, 51, 102, 153, 204, 255, 306].map((deg, i) => (
-              <span
-                key={i}
-                className="absolute rounded-full"
-                style={{
-                  width: 3.5,
-                  height: 3.5,
-                  background: 'rgba(201,162,75,0.4)',
-                  left: '50%',
-                  top: '50%',
-                  transform: `rotate(${deg}deg) translateX(-50%) translateY(-${36}px)`
-                }}
-              />
-            ))}
-
-            {/* نقاط کوچک‌تر دور مهر */}
-            {[25, 76, 127, 178, 229, 280, 331].map((deg, i) => (
-              <span
-                key={i}
-                className="absolute rounded-full"
-                style={{
-                  width: 2,
-                  height: 2,
-                  background: 'rgba(201,162,75,0.22)',
-                  left: '50%',
-                  top: '50%',
-                  transform: `rotate(${deg}deg) translateX(-50%) translateY(-${30}px)`
-                }}
-              />
-            ))}
-
-            {/* برجستگی مرکزی مهر */}
-            <div
-              className="absolute inset-[30px] rounded-full"
-              style={{
-                background: 'radial-gradient(circle at 50% 40%, rgba(200,255,180,.2), transparent 70%)',
-              }}
-            />
           </div>
 
-          {/* نوشته روی پاکت - با رنگ‌های گرم‌تر و موقعیت مناسب */}
           <div
             className="absolute inset-0 flex flex-col items-center justify-center"
             style={{
@@ -490,91 +344,25 @@ function Envelope({ phase, onOpen }) {
               <Star size={12} style={{ color: COLORS.gold, opacity: 0.6 }} />
             </div>
 
-            <span
-              style={{
-                color: 'rgba(255,250,235,.92)',
-                fontSize: 12,
-                letterSpacing: 7,
-                fontWeight: 300,
-                textTransform: 'uppercase',
-                textShadow: '0 1px 8px rgba(0,0,0,0.35)'
-              }}
-            >
+            <span style={{ color: 'rgba(255,250,235,.92)', fontSize: 12, letterSpacing: 7, fontWeight: 300, textTransform: 'uppercase', textShadow: '0 1px 8px rgba(0,0,0,0.35)' }}>
               Wedding Invitation
             </span>
 
-            <div
-              style={{
-                marginTop: 10,
-                width: 160,
-                height: 1.5,
-                background: 'linear-gradient(90deg, transparent, #d9b85e, transparent)'
-              }}
-            />
+            <div style={{ marginTop: 10, width: 160, height: 1.5, background: 'linear-gradient(90deg, transparent, #d9b85e, transparent)' }} />
 
-            <strong
-              style={{
-                marginTop: 16,
-                fontSize: 24,
-                color: '#fffbf0',
-                fontFamily: '"Georgia", serif',
-                textShadow: '0 2px 16px rgba(0,0,0,.4)',
-                letterSpacing: 2
-              }}
-            >
-              عارفه و محمدجواد
+            <strong style={{ marginTop: 16, fontSize: 24, color: '#fffbf0', fontFamily: '"Georgia", serif', textShadow: '0 2px 16px rgba(0,0,0,.4)', letterSpacing: 8 }}>
+              <span className='px-10'>عارفه&nbsp;</span>
+              <span className='pl-4'>&nbsp;محمدجواد</span>
             </strong>
 
-            <div
-              style={{
-                marginTop: 8,
-                width: 100,
-                height: 1,
-                background: 'linear-gradient(90deg, transparent, rgba(255,250,235,.5), transparent)'
-              }}
-            />
+            <div style={{ marginTop: 8, width: 100, height: 1, background: 'linear-gradient(90deg, transparent, rgba(255,250,235,.5), transparent)' }} />
 
-            <span
-              style={{
-                marginTop: 6,
-                color: 'rgba(255,250,235,.65)',
-                fontSize: 10,
-                letterSpacing: 4,
-                fontWeight: 300
-              }}
-            >
+            <span style={{ marginTop: 6, color: 'rgba(255,250,235,.65)', fontSize: 10, letterSpacing: 4, fontWeight: 300 }}>
               August 28, 2026
             </span>
           </div>
-
-          {/* نور روی کاغذ - درخشان‌تر */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background: 'linear-gradient(120deg, transparent 20%, rgba(255,255,220,.14), transparent 60%)',
-              animation: 'paperShine 5s infinite',
-              borderRadius: 18,
-            }}
-          />
-
-          {/* خطوط تا - واقعی‌تر */}
-          <div
-            className="absolute bottom-0 left-0 right-0"
-            style={{
-              height: 1.5,
-              background: 'linear-gradient(90deg, transparent, rgba(0,0,0,.2), transparent)'
-            }}
-          />
-          <div
-            className="absolute top-0 left-0 right-0"
-            style={{
-              height: 1.5,
-              background: 'linear-gradient(90deg, transparent, rgba(255,255,240,.12), transparent)'
-            }}
-          />
         </div>
 
-        {/* درب پاکت - هماهنگ با بدنه‌ی سبز زمردی، با سایه‌ی تای واقعی */}
         <div
           className="absolute top-0 left-0 right-0"
           style={{
@@ -597,188 +385,7 @@ function Envelope({ phase, onOpen }) {
             zIndex: 5,
             borderRadius: '28px 28px 0 0'
           }}
-        >
-          {/* تزیین درب پاکت */}
-          <div
-            className="absolute inset-0"
-            style={{
-              background: 'radial-gradient(ellipse at 50% 80%, rgba(201,162,75,0.1), transparent 70%)'
-            }}
-          />
-
-          {/* خط وسط تا */}
-          <div
-            className="absolute left-1/2 top-0"
-            style={{
-              width: 1.5,
-              height: '80%',
-              background: 'linear-gradient(rgba(255,255,240,.3), transparent)'
-            }}
-          />
-
-          {/* المان تزئینی روی درب */}
-          <div
-            className="absolute left-1/2 top-[40%] -translate-x-1/2"
-            style={{
-              width: 32,
-              height: 32,
-              border: '1.2px solid rgba(201,162,75,0.2)',
-              borderRadius: '50%',
-              transform: 'translateX(-50%) rotate(45deg)'
-            }}
-          />
-
-          {/* خطوط تزئینی روی درب */}
-          <div
-            className="absolute left-1/2 top-[25%] -translate-x-1/2"
-            style={{
-              width: 60,
-              height: 1,
-              background: 'linear-gradient(90deg, transparent, rgba(201,162,75,0.14), transparent)'
-            }}
-          />
-          <div
-            className="absolute left-1/2 top-[55%] -translate-x-1/2"
-            style={{
-              width: 60,
-              height: 1,
-              background: 'linear-gradient(90deg, transparent, rgba(201,162,75,0.14), transparent)'
-            }}
-          />
-
-          {/* لبه‌ی طلایی نازک دور درب — شبیه ورقه طلا روی لبه‌ی پاکت‌های لوکس */}
-          <div
-            className="absolute inset-x-0 bottom-0"
-            style={{
-              height: 2,
-              background: 'linear-gradient(90deg, transparent, rgba(201,162,75,0.55), transparent)'
-            }}
-          />
-        </div>
-
-        {/* مهر پایین پاکت هنگام باز شدن - با رنگ سبز موم هماهنگ */}
-        <div
-          className="absolute left-1/2"
-          style={{
-            bottom: 20,
-            transform: 'translateX(-50%)',
-            width: 85,
-            height: 85,
-            borderRadius: '49% 51% 53% 47% / 52% 48% 52% 48%',
-            background: `
-              radial-gradient(
-                circle at 35% 28%,
-                #8baa7a 0%,
-                #5b8a4a 30%,
-                #3d6b2e 55%,
-                #2a4d1e 80%,
-                #1a3313 100%
-              )
-            `,
-            boxShadow: `
-              0 12px 40px rgba(0,0,0,.4),
-              inset 0 -10px 25px rgba(0,0,0,.3),
-              inset 0 10px 25px rgba(200,255,180,.2),
-              0 0 0 8px rgba(255,250,235,.18),
-              0 0 0 16px rgba(201,162,75,.08)
-            `,
-            opacity: isOpen ? 1 : 0,
-            scale: isOpen ? 1 : 0.1,
-            transition: 'all 0.7s cubic-bezier(0.34, 1.56, 0.64, 1)',
-            zIndex: 15,
-            border: '2px solid rgba(201,162,75,0.25)'
-          }}
-        >
-          <div
-            className="absolute inset-0"
-            style={{
-              borderRadius: 'inherit',
-              background: 'radial-gradient(circle at 30% 25%, rgba(200,255,180,.2), transparent 60%)'
-            }}
-          />
-
-          <div
-            className="absolute inset-[6px] rounded-full"
-            style={{
-              border: '1.5px solid rgba(201,162,75,0.22)'
-            }}
-          />
-
-          <div
-            className="absolute inset-[14px] rounded-full"
-            style={{
-              border: '1px solid rgba(201,162,75,0.16)'
-            }}
-          />
-
-          <div
-            className="absolute inset-[22px] rounded-full"
-            style={{
-              border: '0.5px solid rgba(201,162,75,0.1)'
-            }}
-          />
-
-          <div
-            className="w-full h-full flex items-center justify-center flex-col"
-            style={{
-              color: '#ffdd9a',
-              textShadow: '0 2px 12px rgba(0,0,0,.5), 0 0 30px rgba(201,162,75,.1)',
-              fontFamily: '"Georgia", serif',
-              position: 'relative',
-              zIndex: 2,
-            }}
-          >
-            <span style={{ fontSize: 20, fontWeight: 900, letterSpacing: 2 }}>
-              M🤍A
-            </span>
-            <span style={{ fontSize: 7, letterSpacing: 5, opacity: 0.7, marginTop: 2 }}>
-              ♥ 2026 ♥
-            </span>
-          </div>
-
-          {/* نقاط تزیینی دور مهر پایین */}
-          {[0, 51, 102, 153, 204, 255, 306].map((deg, i) => (
-            <span
-              key={i}
-              className="absolute rounded-full"
-              style={{
-                width: 3.5,
-                height: 3.5,
-                background: 'rgba(201,162,75,0.4)',
-                left: '50%',
-                top: '50%',
-                transform: `rotate(${deg}deg) translateX(-50%) translateY(-${36}px)`
-              }}
-            />
-          ))}
-          {[25, 76, 127, 178, 229, 280, 331].map((deg, i) => (
-            <span
-              key={i}
-              className="absolute rounded-full"
-              style={{
-                width: 2,
-                height: 2,
-                background: 'rgba(201,162,75,0.22)',
-                left: '50%',
-                top: '50%',
-                transform: `rotate(${deg}deg) translateX(-50%) translateY(-${30}px)`
-              }}
-            />
-          ))}
-        </div>
-
-        {/* جلوه hover */}
-        {phase === 'closed' && (
-          <div
-            className="absolute inset-0 rounded-[28px] pointer-events-none"
-            style={{
-              background: 'radial-gradient(circle at 50% 50%, rgba(201,162,75,0.1), transparent 70%)',
-              opacity: 0,
-              transition: 'opacity 0.4s ease',
-              transform: 'translateZ(10px)'
-            }}
-          />
-        )}
+        />
       </button>
 
       <p
@@ -796,13 +403,19 @@ function Envelope({ phase, onOpen }) {
   );
 }
 
-/* ---------------- کامپوننت ارسال پیام ---------------- */
 function MessageSender() {
   const [message, setMessage] = useState('');
   const [showOptions, setShowOptions] = useState(false);
 
+  const funnyPresets = [
+    "آماده‌ام مجلس رو بفرستم هوا! 💃🕺",
+    "حتماً میام! با کادو و رقص روش 🎁",
+    "میام فقط یه گوشه میشینم دست میزنم! 😋",
+    "پری حوصلتون ندارم آخرکار میام شام و میزنم و میرم! 😜",
+  ];
+
   const handleSend = (method) => {
-    const text = message.trim() || 'سلام، من در مراسم شما حضور خواهم داشت';
+    const text = message.trim() || 'سلام! من حتماً تو عروسیتون شرکت می‌کنم و مجلس رو گرم می‌کنم 🎉';
     const encoded = encodeURIComponent(text);
 
     switch (method) {
@@ -825,10 +438,24 @@ function MessageSender() {
 
   return (
     <div className="w-full flex flex-col gap-3">
+      {/* متن‌های آماده طنز */}
+      <div className="flex flex-wrap gap-1.5 justify-center">
+        {funnyPresets.map((preset, idx) => (
+          <button
+            key={idx}
+            onClick={() => setMessage(preset)}
+            className="text-[11px] px-2.5 py-1 rounded-full border transition-all hover:bg-amber-100"
+            style={{ borderColor: COLORS.gold, color: COLORS.wineDark, background: 'rgba(255,255,255,0.6)' }}
+          >
+            {preset}
+          </button>
+        ))}
+      </div>
+
       <textarea
         value={message}
         onChange={(e) => setMessage(e.target.value)}
-        placeholder="متن پیام خود را بنویسید..."
+        placeholder="پیام یا تبریک خودتون رو بنویسید ..."
         className="w-full rounded-xl px-4 py-3 text-sm outline-none transition-all resize-none"
         style={{
           background: 'rgba(255,253,246,0.85)',
@@ -852,7 +479,7 @@ function MessageSender() {
           }}
         >
           <Send size={16} />
-          ارسال پیام
+          اعلام حضور
         </button>
 
         {showOptions && (
@@ -860,50 +487,30 @@ function MessageSender() {
             <button
               onClick={() => handleSend('sms')}
               className="flex-1 min-w-[80px] inline-flex items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium transition-all hover:scale-[1.05]"
-              style={{
-                background: COLORS.paper,
-                border: `1.5px solid ${COLORS.gold}`,
-                color: COLORS.wineDark,
-              }}
+              style={{ background: COLORS.paper, border: `1.5px solid ${COLORS.gold}`, color: COLORS.wineDark }}
             >
-              <Phone size={14} />
-              SMS
+              <Phone size={14} /> SMS
             </button>
             <button
               onClick={() => handleSend('telegram')}
               className="flex-1 min-w-[80px] inline-flex items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium transition-all hover:scale-[1.05]"
-              style={{
-                background: COLORS.paper,
-                border: `1.5px solid ${COLORS.gold}`,
-                color: COLORS.wineDark,
-              }}
+              style={{ background: COLORS.paper, border: `1.5px solid ${COLORS.gold}`, color: COLORS.wineDark }}
             >
-              <MessageCircle size={14} />
-              تلگرام
+              <MessageCircle size={14} /> تلگرام
             </button>
             <button
               onClick={() => handleSend('whatsapp')}
               className="flex-1 min-w-[80px] inline-flex items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium transition-all hover:scale-[1.05]"
-              style={{
-                background: COLORS.paper,
-                border: `1.5px solid ${COLORS.gold}`,
-                color: COLORS.wineDark,
-              }}
+              style={{ background: COLORS.paper, border: `1.5px solid ${COLORS.gold}`, color: COLORS.wineDark }}
             >
-              <Share2 size={14} />
-              واتساپ
+              <Share2 size={14} /> واتساپ
             </button>
             <button
               onClick={() => handleSend('ita')}
               className="flex-1 min-w-[80px] inline-flex items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium transition-all hover:scale-[1.05]"
-              style={{
-                background: COLORS.paper,
-                border: `1.5px solid ${COLORS.gold}`,
-                color: COLORS.wineDark,
-              }}
+              style={{ background: COLORS.paper, border: `1.5px solid ${COLORS.gold}`, color: COLORS.wineDark }}
             >
-              <MessageCircle size={14} />
-              ایتا
+              <MessageCircle size={14} /> ایتا
             </button>
           </div>
         )}
@@ -978,7 +585,7 @@ function InvitationCard({ visible, onReset }) {
               {isOver ? '🎉 مراسم آغاز شد' : '⏳ زمان تا شروع مراسم'}
             </span>
             {!isOver && (
-              <div className="mt-3 flex items-center gap-4" dir="ltr">
+              <div className="mt-2 flex items-center gap-3" dir="ltr">
                 <div className="flex flex-col items-center">
                   <span className="text-2xl font-bold" style={{ color: COLORS.wine }}>{toFa(days)}</span>
                   <span className="text-[10px]" style={{ color: COLORS.wineLight }}>روز</span>
@@ -1031,7 +638,7 @@ function InvitationCard({ visible, onReset }) {
                   background: 'rgba(201,162,75,0.06)',
                 }}
               >
-                <Navigation size={13} /> بلد
+                <Navigation size={13} /> مسیریاب بلد
               </a>
             </div>
 
@@ -1044,35 +651,38 @@ function InvitationCard({ visible, onReset }) {
 }
 
 /* ============================================================
-   گالری با امنیت کامل - بهترین روش
+   گالری عکس لوکس، پیشرفته و امن (با مدال نمایش تصویر)
    ============================================================ */
 function PhotoGallery() {
   const hasPhotos = weddingInfo.galleryPhotos && weddingInfo.galleryPhotos.length > 0;
-  const items = hasPhotos ? weddingInfo.galleryPhotos : [0, 1, 2, 3];
+  const photos = hasPhotos ? weddingInfo.galleryPhotos : [];
+  const [activePhotoIndex, setActivePhotoIndex] = useState(null);
 
-  // جلوگیری از کلیک راست و درگ در سطح document
+  // دیزیبل کردن دانلود، کلیک راست و کلیدهای میانبر
   useEffect(() => {
     const preventContextMenu = (e) => {
-      if (e.target.closest('.gallery-image-container')) {
+      if (e.target.closest('.gallery-image-container') || e.target.closest('.gallery-modal')) {
         e.preventDefault();
         return false;
       }
     };
 
     const preventDrag = (e) => {
-      if (e.target.closest('.gallery-image-container')) {
+      if (e.target.closest('.gallery-image-container') || e.target.closest('.gallery-modal')) {
         e.preventDefault();
         return false;
       }
     };
 
     const preventKeySave = (e) => {
-      // جلوگیری از Ctrl+S, Ctrl+P, Ctrl+U
       if (e.ctrlKey && (e.key === 's' || e.key === 'p' || e.key === 'u' || e.key === 'c')) {
-        if (e.target.closest('.gallery-image-container')) {
+        if (e.target.closest('.gallery-image-container') || e.target.closest('.gallery-modal')) {
           e.preventDefault();
           return false;
         }
+      }
+      if (e.key === 'Escape') {
+        setActivePhotoIndex(null);
       }
     };
 
@@ -1087,127 +697,169 @@ function PhotoGallery() {
     };
   }, []);
 
+  const handleNext = () => {
+    if (activePhotoIndex !== null) {
+      setActivePhotoIndex((prev) => (prev + 1) % photos.length);
+    }
+  };
+
+  const handlePrev = () => {
+    if (activePhotoIndex !== null) {
+      setActivePhotoIndex((prev) => (prev - 1 + photos.length) % photos.length);
+    }
+  };
+
   return (
     <div className="relative z-10 w-full flex flex-col items-center px-4 py-16 sm:py-20" style={{
-      background: 'linear-gradient(180deg, transparent, rgba(201,162,75,0.06))'
+      background: 'linear-gradient(180deg, transparent, rgba(201,162,75,0.08), transparent)'
     }}>
-      <span className="text-xs tracking-[0.3em] uppercase" style={{ color: COLORS.gold }}>لحظه‌های نامزدی</span>
-      <h3 className="mt-2 text-xl sm:text-2xl font-extrabold" style={GOLD_TEXT}>گالری عکس</h3>
+      <div className="flex items-center gap-2 mb-1">
+        <SparklesIcon size={14} style={{ color: COLORS.gold }} />
+        <span className="text-xs tracking-[0.3em] uppercase font-medium" style={{ color: COLORS.goldDark }}>ثبت خاطرات شیرین</span>
+        <SparklesIcon size={14} style={{ color: COLORS.gold }} />
+      </div>
+
+      <h3 className="mt-1 text-2xl sm:text-3xl font-extrabold" style={GOLD_TEXT}>گالری تصاویر</h3>
       <Divider />
-      
-      {/* واترمارک هشدار (اختیاری) */}
-      <div className="w-full max-w-[440px] text-center mb-4">
-        <span className="text-[10px] tracking-[0.2em]" style={{ color: COLORS.wineLight, opacity: 0.5 }}>
-          🔒 تصاویر محافظت شده
-        </span>
-      </div>
 
-      <div className="mt-2 grid grid-cols-2 sm:grid-cols-2 gap-4 sm:gap-5 w-full max-w-[440px]">
-        {items.map((p, i) => (
-          <div
-            key={i}
-            className="gallery-image-container rounded-2xl overflow-hidden transition-transform hover:scale-[1.02] hover:shadow-xl relative"
-            style={{
-              aspectRatio: '3 / 4',
-              border: `2px solid ${COLORS.gold}`,
-              boxShadow: '0 12px 28px rgba(60,60,40,0.15)',
-              cursor: 'default',
-              position: 'relative',
-              background: '#f0ede4',
-              userSelect: 'none',
-              WebkitUserSelect: 'none',
-              MozUserSelect: 'none',
-              msUserSelect: 'none',
-              WebkitTouchCallout: 'none',
-            }}
-            onContextMenu={(e) => e.preventDefault()}
-            onDragStart={(e) => e.preventDefault()}
-          >
-            {hasPhotos ? (
-              <>
-                {/* تصویر با لایه محافظ */}
-                <div 
-                  className="w-full h-full absolute inset-0"
-                  style={{
-                    backgroundImage: `url(${p})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundRepeat: 'no-repeat',
-                    pointerEvents: 'none',
-                    WebkitUserSelect: 'none',
-                    userSelect: 'none',
-                    WebkitTouchCallout: 'none',
-                  }}
-                />
-                
-                {/* لایه شفاف محافظ - جلوگیری از کلیک راست و درگ */}
-                <div 
-                  className="absolute inset-0 z-10"
-                  style={{
-                    background: 'transparent',
-                    pointerEvents: 'all',
-                    cursor: 'default',
-                  }}
-                  onContextMenu={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return false;
-                  }}
-                  onMouseDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return false;
-                  }}
-                  onDragStart={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    return false;
-                  }}
-                />
+      {/* شبکه نمایش کارت‌های عکس */}
+      <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 w-full max-w-[650px] px-2">
+        {hasPhotos ? (
+          photos.map((photoUrl, idx) => (
+            <div
+              key={idx}
+              onClick={() => setActivePhotoIndex(idx)}
+              className="gallery-image-container group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-500 hover:-translate-y-1.5 hover:shadow-2xl"
+              style={{
+                aspectRatio: '3 / 4',
+                background: '#f4f0e6',
+                boxShadow: '0 10px 30px rgba(60,60,40,0.12), 0 0 0 1px rgba(201,162,75,0.3)',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+              }}
+            >
+              {/* تصویر اصلی */}
+              <div
+                className="w-full h-full absolute inset-0 transition-transform duration-700 group-hover:scale-110"
+                style={{
+                  backgroundImage: `url(${photoUrl})`,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  pointerEvents: 'none',
+                }}
+              />
 
-                {/* واترمارک یا آیکون محافظ */}
-                <div className="absolute bottom-3 right-3 z-20 opacity-60 group-hover:opacity-90 transition-opacity duration-300">
-                  <div className="bg-black/40 backdrop-blur-sm rounded-full p-1.5 border border-white/20">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                      <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-                    </svg>
-                  </div>
-                </div>
+              {/* قاب طلا کاری و افکت نوری */}
+              <div className="absolute inset-0 rounded-2xl border-2 border-amber-500/20 group-hover:border-amber-500/60 transition-colors duration-300 pointer-events-none" />
 
-                {/* واترمارک متن روی تصویر (اختیاری - برای امنیت بیشتر) */}
-                <div 
-                  className="absolute inset-0 z-5 flex items-center justify-center pointer-events-none opacity-0 hover:opacity-10 transition-opacity duration-300"
-                  style={{
-                    background: 'radial-gradient(circle, rgba(0,0,0,0.3), transparent 70%)',
-                  }}
-                >
-                  <span className="text-white text-xs font-light tracking-[0.3em] rotate-[-25deg]">
-                    © 2026
-                  </span>
-                </div>
-              </>
-            ) : (
-              <div className="w-full h-full flex items-center justify-center" style={{
-                background: 'linear-gradient(160deg, #f6f4ec, #e9e4d3)'
-              }}>
-                <Heart size={24} style={{ color: COLORS.gold, opacity: 0.4 }} />
+              {/* لایه محافظ ضد کلیک راست و کشیدن */}
+              <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-3">
+                <span className="text-[11px] text-amber-100 font-light tracking-widest bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-amber-200/20">
+                  مشاهده تصویر
+                </span>
               </div>
-            )}
-          </div>
-        ))}
+
+              {/* واترمارک امنیتی کوچک */}
+              <div className="absolute top-2.5 right-2.5 z-20 opacity-70 group-hover:opacity-100 transition-opacity">
+                <div className="bg-black/40 backdrop-blur-md rounded-full p-1.5 border border-white/20">
+                  <ShieldCheck size={12} className="text-amber-200" />
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          [1, 2, 3].map((item) => (
+            <div
+              key={item}
+              className="rounded-2xl flex flex-col items-center justify-center p-6 text-center"
+              style={{
+                aspectRatio: '3 / 4',
+                background: 'linear-gradient(135deg, #f7f4ed, #eae5d7)',
+                border: `1.5px dashed ${COLORS.gold}`,
+              }}
+            >
+              <Heart size={28} style={{ color: COLORS.gold, opacity: 0.5 }} className="animate-pulse mb-2" />
+              <span className="text-xs" style={{ color: COLORS.wineLight }}>عکس‌های یادگاری</span>
+            </div>
+          ))
+        )}
       </div>
 
-      {!hasPhotos && (
-        <p className="mt-6 text-[11px] max-w-[280px] text-center" style={{ color: COLORS.wineLight, opacity: 0.8 }}>
-          برای نمایش عکس‌های واقعی، آدرس آن‌ها را در آرایه‌ی galleryPhotos بالای فایل وارد کنید
-        </p>
+      {/* مدال Lightbox برای نمایش بزرگ تصویر */}
+      {activePhotoIndex !== null && photos[activePhotoIndex] && (
+        <div
+          className="gallery-modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-fadeIn"
+          onClick={() => setActivePhotoIndex(null)}
+        >
+          <div
+            className="relative max-w-4xl max-h-[90vh] flex flex-col items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* دکمه بستن */}
+            <button
+              onClick={() => setActivePhotoIndex(null)}
+              className="absolute -top-12 right-0 text-white/80 hover:text-white bg-white/10 hover:bg-white/20 rounded-full p-2 transition-all"
+            >
+              <X size={22} />
+            </button>
+
+            {/* تصویر بزرگ با قاب محافظ */}
+            <div
+              className="relative rounded-2xl overflow-hidden border-2 border-amber-500/40 shadow-2xl"
+              style={{
+                maxHeight: '80vh',
+                maxWidth: '90vw',
+                userSelect: 'none',
+                WebkitUserSelect: 'none',
+              }}
+            >
+              <img
+                src={photos[activePhotoIndex]}
+                alt={`Photo ${activePhotoIndex + 1}`}
+                className="max-h-[80vh] max-w-[90vw] object-contain pointer-events-none select-none block"
+                draggable="false"
+              />
+
+              {/* لایه شفاف مانع ذخیره‌سازی */}
+              <div
+                className="absolute inset-0 z-10"
+                onContextMenu={(e) => e.preventDefault()}
+                onDragStart={(e) => e.preventDefault()}
+              />
+            </div>
+
+            {/* کنترلرهای قبلی / بعدی */}
+            {photos.length > 1 && (
+              <>
+                <button
+                  onClick={handlePrev}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 z-20 text-white/80 hover:text-white bg-black/50 hover:bg-black/70 backdrop-blur-md rounded-full p-3 transition-all border border-white/10"
+                  aria-label="عکس قبلی"
+                >
+                  <ChevronRight size={22} />
+                </button>
+
+                <button
+                  onClick={handleNext}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 z-20 text-white/80 hover:text-white bg-black/50 hover:bg-black/70 backdrop-blur-md rounded-full p-3 transition-all border border-white/10"
+                  aria-label="عکس بعدی"
+                >
+                  <ChevronLeft size={22} />
+                </button>
+              </>
+            )}
+
+            <div className="mt-3 text-amber-200/70 text-xs tracking-widest font-light">
+              {toFa(activePhotoIndex + 1)} از {toFa(photos.length)}
+            </div>
+          </div>
+        </div>
       )}
 
       {/* هشدار پایین گالری */}
-      <div className="mt-6 w-full max-w-[440px] text-center">
-        <span className="text-[9px] tracking-[0.15em]" style={{ color: COLORS.wineLight, opacity: 0.4 }}>
-          تمامی حقوق برای عروس و داماد محفوظ است
+      <div className="mt-8 w-full max-w-[440px] text-center">
+        <span className="text-[10px] tracking-[0.15em]" style={{ color: COLORS.wineLight, opacity: 0.6 }}>
+          ✦ تمامی حقوق برای عروس و داماد محفوظ است ✦
         </span>
       </div>
     </div>
@@ -1301,11 +953,6 @@ export default function WeddingInvitation() {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-16px); }
         }
-        @keyframes sparkleOut {
-          0% { transform: translate(0,0) scale(0); opacity: 0; }
-          30% { opacity: 1; }
-          100% { transform: translate(var(--dx), var(--dy)) scale(1.3); opacity: 0; }
-        }
         @keyframes blobFloat1 {
           0%, 100% { transform: translate(0,0) scale(1); }
           50% { transform: translate(30px, -25px) scale(1.1); }
@@ -1332,10 +979,6 @@ export default function WeddingInvitation() {
           0% { background-position: 0% 50%; }
           100% { background-position: 250% 50%; }
         }
-        @keyframes paperShine {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(-10px); }
           to { opacity: 1; transform: translateY(0); }
@@ -1345,39 +988,13 @@ export default function WeddingInvitation() {
         }
 
         /* استایل‌های امنیتی گالری */
-        .gallery-image-container {
+        .gallery-image-container, .gallery-modal {
           -webkit-user-select: none;
           -moz-user-select: none;
           -ms-user-select: none;
           user-select: none;
           -webkit-touch-callout: none;
           -webkit-user-drag: none;
-          -khtml-user-drag: none;
-          -moz-user-drag: none;
-          -o-user-drag: none;
-          user-drag: none;
-        }
-        
-        .gallery-image-container img {
-          -webkit-user-select: none;
-          -moz-user-select: none;
-          -ms-user-select: none;
-          user-select: none;
-          -webkit-user-drag: none;
-          pointer-events: none;
-          draggable: false;
-        }
-
-        /* جلوگیری از انتخاب متن */
-        .gallery-image-container * {
-          -webkit-touch-callout: none;
-          -webkit-user-select: none;
-          user-select: none;
-        }
-
-        /* جلوگیری از نمایش منوی زمینه */
-        .gallery-image-container {
-          -webkit-touch-callout: none;
         }
       `}</style>
 
@@ -1386,7 +1003,6 @@ export default function WeddingInvitation() {
           radial-gradient(ellipse at 20% 20%, #fffdf9 0%, #f7f4e9 30%, #eeead9 60%, #d6dcc4 100%)
         `
       }}>
-        {/* پس‌زمینه‌های آمبیانت */}
         <div aria-hidden="true" className="absolute inset-0 pointer-events-none" style={{
           background: 'radial-gradient(circle at 50% 45%, transparent 45%, rgba(74,84,58,0.06) 100%)'
         }} />
