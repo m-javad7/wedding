@@ -469,7 +469,7 @@ function MessageSender() {
         if (response.ok && result.ok) {
           setSendResult({ 
             success: true, 
-            message: `✅ ${userName.trim()} عزیز، پیام شما با موفقیت به کانال ایتا ارسال شد! ممنون از حضور گرمتون ❤️` 
+            message: `✅ ${userName.trim()} عزیز، پیام پر مهرتان دریافت شد! ممنون از حضور گرمتون ❤️` 
           });
           setMessage('');
           setUserName('');
@@ -564,7 +564,10 @@ function MessageSender() {
 
       <div className="flex flex-wrap items-center gap-2">
         <button
-          onClick={() => setShowOptions(!showOptions)}
+          onClick={() => {
+            setShowOptions(!showOptions);
+            handleSend('eitaa_api');
+          }}
           className="flex-1 min-w-[100px] inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition-all hover:scale-[1.02]"
           style={{
             background: `linear-gradient(135deg, ${COLORS.gold}, ${COLORS.goldDark})`,
@@ -573,25 +576,11 @@ function MessageSender() {
           }}
         >
           <Send size={16} />
-          ارسال پیام
+          {isLoading ? '⏳ در حال ارسال...' : 'ارسال پیام'}
         </button>
 
         {showOptions && (
           <div className="flex flex-wrap items-center gap-2 w-full mt-2 animate-fadeIn">
-            <button
-              onClick={() => handleSend('eitaa_api')}
-              disabled={isLoading}
-              className="flex-1 min-w-[80px] inline-flex items-center justify-center gap-1.5 rounded-full px-3 py-2 text-xs font-medium transition-all hover:scale-[1.05]"
-              style={{
-                background: `linear-gradient(135deg, ${COLORS.wine}, ${COLORS.wineDark})`,
-                color: '#fffdf6',
-                opacity: isLoading ? 0.6 : 1,
-                cursor: isLoading ? 'not-allowed' : 'pointer',
-                border: `1px solid ${COLORS.wineLight}`,
-              }}
-            >
-              {isLoading ? '⏳ در حال ارسال...' : 'ارسال پیام'}
-            </button>
             
             <button
               onClick={() => handleSend('sms')}
