@@ -573,7 +573,7 @@ function MessageSender() {
           }}
         >
           <Send size={16} />
-          اعلام حضور
+          ارسال پیام
         </button>
 
         {showOptions && (
