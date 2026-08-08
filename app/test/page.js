@@ -7,7 +7,7 @@ const ChannelMessages = () => {
   const [error, setError] = useState(null);
 
   // توکن ربات
-  const token = '1101398776:xxNBOBYHUvmY4nj1pOB2QeLIJKEFPgdYEkU';
+  const token = 'CBDGJA0OSJRJABPOQDDPEDXVKMLYQXISGUTBEAQREVQUGPCWZETZNFDSJLXQLYWD';
   const apiUrl = `https://tapi.bale.ai/bot${token}/getUpdates`;
 
   useEffect(() => {
