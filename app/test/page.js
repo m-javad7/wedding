@@ -1,241 +1,250 @@
-// app/test-bale/page.js
 "use client";
-import React, { useState } from 'react';
+// pages/index.js یا app/page.js
+import React, { useState, useEffect } from 'react';
 
-export default function TestBalePage() {
-  const [serverResponse, setServerResponse] = useState(null);
-  const [clientResponse, setClientResponse] = useState(null);
-  const [loading, setLoading] = useState({ server: false, client: false });
-  const [error, setError] = useState({ server: null, client: null });
+function HomePage() {
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
-  const BALE_TOKEN = '1101398776:xxNBOBYHUvmY4nj1pOB2QeLIJKEFPgdYEkU';
-
-  // تست از طریق سرور (API Route)
-  const testServer = async () => {
-    setLoading(prev => ({ ...prev, server: true }));
-    setError(prev => ({ ...prev, server: null }));
-    setServerResponse(null);
-
+  const fetchMessages = async () => {
     try {
+      setLoading(true);
+      setError(null);
+
+      // استفاده از API خودمان (بدون مشکل CORS)
       const response = await fetch('/api/bale/getMessages');
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const data = await response.json();
-      setServerResponse(data);
+
+      if (data.ok) {
+        // فیلتر کردن پیام‌های کانال
+        const channelMessages = data.result.filter(
+          (update) => update.message && 
+          update.message.chat && 
+          update.message.chat.type === 'channel'
+        );
+
+        const formattedMessages = channelMessages.map((update) => ({
+          id: update.update_id,
+          messageId: update.message.message_id,
+          channelTitle: update.message.chat.title || 'کانال بدون نام',
+          channelUsername: update.message.chat.username || '',
+          text: update.message.text || 'پیام متنی ندارد',
+          date: new Date(update.message.date * 1000).toLocaleString('fa-IR'),
+          hasMedia: !!update.message.photo || 
+                   !!update.message.video || 
+                   !!update.message.document,
+          isForwarded: !!update.message.forward_from || 
+                       !!update.message.forward_origin,
+        }));
+
+        setMessages(formattedMessages);
+      } else {
+        setError('خطا در دریافت پیام‌ها');
+      }
     } catch (err) {
-      setError(prev => ({ ...prev, server: err.message }));
+      console.error('Error:', err);
+      setError('خطا در ارتباط با سرور: ' + err.message);
     } finally {
-      setLoading(prev => ({ ...prev, server: false }));
+      setLoading(false);
     }
   };
 
-  // تست مستقیم از کلاینت (مرورگر)
-  const testClient = async () => {
-    setLoading(prev => ({ ...prev, client: true }));
-    setError(prev => ({ ...prev, client: null }));
-    setClientResponse(null);
-
-    try {
-      const response = await fetch(
-        `https://tapi.bale.ai/bot${BALE_TOKEN}/getUpdates`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            offset: 0,
-            limit: 50,
-            timeout: 10,
-          }),
-        }
-      );
-
-      const data = await response.json();
-      setClientResponse(data);
-    } catch (err) {
-      setError(prev => ({ ...prev, client: err.message }));
-    } finally {
-      setLoading(prev => ({ ...prev, client: false }));
-    }
-  };
-
-  // تست با Webhook (حذف Webhook)
-  const testDeleteWebhook = async () => {
-    try {
-      const response = await fetch(
-        `https://tapi.bale.ai/bot${BALE_TOKEN}/deleteWebhook`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-      const data = await response.json();
-      alert('حذف Webhook: ' + JSON.stringify(data, null, 2));
-    } catch (err) {
-      alert('خطا: ' + err.message);
-    }
-  };
-
-  // تست ارسال پیام به کانال
-  const testSendMessage = async () => {
-    const text = prompt('متن پیام تست را وارد کنید:');
-    if (!text) return;
-
-    try {
-      const response = await fetch(
-        `https://tapi.bale.ai/bot${BALE_TOKEN}/sendMessage`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            chat_id: '@weddingMA',
-            text: `🧪 پیام تست از صفحه تست: ${text}`,
-            parse_mode: 'HTML',
-          }),
-        }
-      );
-      const data = await response.json();
-      alert('نتیجه ارسال: ' + JSON.stringify(data, null, 2));
-    } catch (err) {
-      alert('خطا: ' + err.message);
-    }
-  };
+  useEffect(() => {
+    fetchMessages();
+  }, []);
 
   return (
-    <div dir="rtl" className="min-h-screen p-8 bg-gray-50" style={{ fontFamily: "'Vazirmatn', Tahoma, sans-serif" }}>
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold mb-6 text-center">🧪 صفحه تست API بله</h1>
-        
-        {/* اطلاعات */}
-        <div className="bg-white rounded-xl p-4 mb-6 shadow-sm border border-gray-200">
-          <h2 className="font-semibold mb-2 text-sm text-gray-600">📋 اطلاعات</h2>
-          <div className="text-xs space-y-1 text-gray-500">
-            <p><span className="font-medium">توکن:</span> {BALE_TOKEN.substring(0, 15)}...</p>
-            <p><span className="font-medium">کانال:</span> @weddingMA</p>
-            <p><span className="font-medium">آدرس API:</span> https://tapi.bale.ai/bot...</p>
+    <div style={styles.container}>
+      <h1 style={styles.header}>📢 پیام‌های کانال</h1>
+      
+      <button 
+        onClick={fetchMessages} 
+        style={styles.updateButton}
+        disabled={loading}
+      >
+        {loading ? '⏳ در حال بارگذاری...' : '🔄 بروزرسانی'}
+      </button>
+
+      {error && (
+        <div style={styles.error}>
+          ❌ {error}
+        </div>
+      )}
+
+      <div style={styles.messagesList}>
+        {messages.length === 0 && !loading && !error && (
+          <p style={styles.noMessages}>هیچ پیامی در کانال یافت نشد</p>
+        )}
+
+        {messages.map((msg) => (
+          <div key={msg.id} style={styles.messageCard}>
+            <div style={styles.messageHeader}>
+              <span style={styles.channelTitle}>📌 {msg.channelTitle}</span>
+              {msg.channelUsername && (
+                <span style={styles.channelUsername}>@{msg.channelUsername}</span>
+              )}
+              <span style={styles.messageDate}>{msg.date}</span>
+            </div>
+            
+            <div style={styles.messageBody}>
+              <p style={styles.messageText}>{msg.text}</p>
+              {msg.hasMedia && (
+                <span style={styles.mediaBadge}>📎 دارای رسانه</span>
+              )}
+              {msg.isForwarded && (
+                <span style={styles.forwardedBadge}>↩️ بازنشر شده</span>
+              )}
+            </div>
+            
+            <div style={styles.messageFooter}>
+              <span style={styles.messageId}>شناسه: {msg.messageId}</span>
+            </div>
           </div>
-        </div>
-
-        {/* دکمه‌ها */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          <button
-            onClick={testServer}
-            disabled={loading.server}
-            className="px-4 py-3 rounded-xl text-sm font-medium transition-all hover:scale-105 disabled:opacity-50"
-            style={{
-              background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
-              color: 'white',
-            }}
-          >
-            {loading.server ? '⏳ در حال...' : '🖥️ تست از سرور'}
-          </button>
-
-          <button
-            onClick={testClient}
-            disabled={loading.client}
-            className="px-4 py-3 rounded-xl text-sm font-medium transition-all hover:scale-105 disabled:opacity-50"
-            style={{
-              background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-              color: 'white',
-            }}
-          >
-            {loading.client ? '⏳ در حال...' : '🌐 تست از کلاینت'}
-          </button>
-
-          <button
-            onClick={testDeleteWebhook}
-            className="px-4 py-3 rounded-xl text-sm font-medium transition-all hover:scale-105"
-            style={{
-              background: 'linear-gradient(135deg, #ef4444, #dc2626)',
-              color: 'white',
-            }}
-          >
-            🗑️ حذف Webhook
-          </button>
-
-          <button
-            onClick={testSendMessage}
-            className="px-4 py-3 rounded-xl text-sm font-medium transition-all hover:scale-105"
-            style={{
-              background: 'linear-gradient(135deg, #f59e0b, #d97706)',
-              color: 'white',
-            }}
-          >
-            📤 ارسال پیام تست
-          </button>
-        </div>
-
-        {/* نتیجه تست سرور */}
-        <div className="mb-6">
-          <h2 className="font-semibold mb-2 text-sm flex items-center gap-2">
-            🖥️ نتیجه تست از سرور
-            {loading.server && <span className="text-xs text-gray-400">(در حال بارگذاری...)</span>}
-          </h2>
-          {error.server && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm">
-              ❌ خطا: {error.server}
-            </div>
-          )}
-          {serverResponse && (
-            <div className="bg-gray-900 rounded-xl p-4 overflow-auto max-h-96">
-              <pre className="text-xs text-green-400 whitespace-pre-wrap">
-                {JSON.stringify(serverResponse, null, 2)}
-              </pre>
-            </div>
-          )}
-          {!serverResponse && !loading.server && !error.server && (
-            <div className="bg-gray-100 rounded-xl p-4 text-gray-400 text-sm text-center">
-              برای تست، دکمه "تست از سرور" را بزنید
-            </div>
-          )}
-        </div>
-
-        {/* نتیجه تست کلاینت */}
-        <div className="mb-6">
-          <h2 className="font-semibold mb-2 text-sm flex items-center gap-2">
-            🌐 نتیجه تست از کلاینت
-            {loading.client && <span className="text-xs text-gray-400">(در حال بارگذاری...)</span>}
-          </h2>
-          {error.client && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-red-700 text-sm">
-              ❌ خطا: {error.client}
-            </div>
-          )}
-          {clientResponse && (
-            <div className="bg-gray-900 rounded-xl p-4 overflow-auto max-h-96">
-              <pre className="text-xs text-green-400 whitespace-pre-wrap">
-                {JSON.stringify(clientResponse, null, 2)}
-              </pre>
-            </div>
-          )}
-          {!clientResponse && !loading.client && !error.client && (
-            <div className="bg-gray-100 rounded-xl p-4 text-gray-400 text-sm text-center">
-              برای تست، دکمه "تست از کلاینت" را بزنید
-            </div>
-          )}
-        </div>
-
-        {/* راهنما */}
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 text-xs text-blue-700">
-          <p className="font-semibold mb-1">📖 راهنما:</p>
-          <ul className="list-disc list-inside space-y-1 text-blue-600">
-            <li><strong>تست از سرور:</strong> درخواست از طریق API Route Next.js (مشکل ممکن است در سرور باشد)</li>
-            <li><strong>تست از کلاینت:</strong> درخواست مستقیم از مرورگر (مشکل ممکن است در شبکه باشد)</li>
-            <li><strong>حذف Webhook:</strong> اگر Webhook تنظیم شده، getUpdates کار نمی‌کند</li>
-            <li><strong>ارسال پیام تست:</strong> یک پیام تست به کانال ارسال می‌کند</li>
-          </ul>
-        </div>
-
-        {/* دکمه بازگشت */}
-        <div className="mt-6 text-center">
-          <a href="/" className="text-sm text-blue-500 hover:underline">
-            ← بازگشت به صفحه اصلی
-          </a>
-        </div>
+        ))}
       </div>
+
+      {messages.length > 0 && (
+        <div style={styles.stats}>
+          📊 تعداد کل پیام‌ها: {messages.length}
+        </div>
+      )}
     </div>
   );
 }
+
+const styles = {
+  container: {
+    maxWidth: '800px',
+    margin: '0 auto',
+    padding: '20px',
+    fontFamily: 'system-ui, -apple-system, sans-serif',
+    direction: 'rtl',
+    backgroundColor: '#f5f5f5',
+    minHeight: '100vh',
+  },
+  header: {
+    color: '#333',
+    borderBottom: '3px solid #4CAF50',
+    paddingBottom: '10px',
+    marginBottom: '20px',
+  },
+  updateButton: {
+    backgroundColor: '#4CAF50',
+    color: 'white',
+    border: 'none',
+    padding: '12px 24px',
+    borderRadius: '8px',
+    fontSize: '16px',
+    cursor: 'pointer',
+    marginBottom: '20px',
+    transition: 'background-color 0.3s',
+  },
+  error: {
+    backgroundColor: '#ffebee',
+    color: '#c62828',
+    padding: '15px',
+    borderRadius: '8px',
+    marginBottom: '20px',
+    border: '1px solid #ef9a9a',
+  },
+  noMessages: {
+    textAlign: 'center',
+    color: '#999',
+    padding: '40px',
+    backgroundColor: 'white',
+    borderRadius: '8px',
+  },
+  messagesList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '15px',
+  },
+  messageCard: {
+    backgroundColor: 'white',
+    borderRadius: '12px',
+    padding: '18px',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+    border: '1px solid #e0e0e0',
+  },
+  messageHeader: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: '10px',
+    marginBottom: '12px',
+    paddingBottom: '10px',
+    borderBottom: '1px solid #eee',
+  },
+  channelTitle: {
+    fontWeight: 'bold',
+    color: '#1a237e',
+    fontSize: '16px',
+  },
+  channelUsername: {
+    color: '#666',
+    fontSize: '14px',
+    backgroundColor: '#f0f0f0',
+    padding: '2px 8px',
+    borderRadius: '4px',
+  },
+  messageDate: {
+    color: '#999',
+    fontSize: '12px',
+    marginRight: 'auto',
+  },
+  messageBody: {
+    marginBottom: '10px',
+  },
+  messageText: {
+    margin: '0',
+    lineHeight: '1.6',
+    color: '#333',
+    whiteSpace: 'pre-wrap',
+    wordBreak: 'break-word',
+  },
+  mediaBadge: {
+    display: 'inline-block',
+    backgroundColor: '#e3f2fd',
+    color: '#0d47a1',
+    padding: '3px 10px',
+    borderRadius: '12px',
+    fontSize: '12px',
+    marginTop: '8px',
+  },
+  forwardedBadge: {
+    display: 'inline-block',
+    backgroundColor: '#fff3e0',
+    color: '#e65100',
+    padding: '3px 10px',
+    borderRadius: '12px',
+    fontSize: '12px',
+    marginTop: '8px',
+    marginRight: '8px',
+  },
+  messageFooter: {
+    borderTop: '1px solid #eee',
+    paddingTop: '8px',
+    marginTop: '8px',
+  },
+  messageId: {
+    color: '#999',
+    fontSize: '11px',
+  },
+  stats: {
+    marginTop: '20px',
+    padding: '15px',
+    backgroundColor: '#e8f5e9',
+    borderRadius: '8px',
+    textAlign: 'center',
+    color: '#2e7d32',
+    fontWeight: 'bold',
+  },
+};
+
+export default HomePage;
