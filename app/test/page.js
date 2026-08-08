@@ -1,250 +1,180 @@
-"use client";
-// pages/index.js یا app/page.js
+"use client"
 import React, { useState, useEffect } from 'react';
 
-function HomePage() {
+const ChannelMessages = () => {
   const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const fetchMessages = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      // استفاده از API خودمان (بدون مشکل CORS)
-      const response = await fetch('/api/bale/getMessages');
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-
-      if (data.ok) {
-        // فیلتر کردن پیام‌های کانال
-        const channelMessages = data.result.filter(
-          (update) => update.message && 
-          update.message.chat && 
-          update.message.chat.type === 'channel'
-        );
-
-        const formattedMessages = channelMessages.map((update) => ({
-          id: update.update_id,
-          messageId: update.message.message_id,
-          channelTitle: update.message.chat.title || 'کانال بدون نام',
-          channelUsername: update.message.chat.username || '',
-          text: update.message.text || 'پیام متنی ندارد',
-          date: new Date(update.message.date * 1000).toLocaleString('fa-IR'),
-          hasMedia: !!update.message.photo || 
-                   !!update.message.video || 
-                   !!update.message.document,
-          isForwarded: !!update.message.forward_from || 
-                       !!update.message.forward_origin,
-        }));
-
-        setMessages(formattedMessages);
-      } else {
-        setError('خطا در دریافت پیام‌ها');
-      }
-    } catch (err) {
-      console.error('Error:', err);
-      setError('خطا در ارتباط با سرور: ' + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // توکن ربات
+  const token = '1101398776:xxNBOBYHUvmY4nj1pOB2QeLIJKEFPgdYEkU';
+  const apiUrl = `https://tapi.bale.ai/bot${token}/getUpdates`;
 
   useEffect(() => {
     fetchMessages();
   }, []);
 
-  return (
-    <div style={styles.container}>
-      <h1 style={styles.header}>📢 پیام‌های کانال</h1>
-      
-      <button 
-        onClick={fetchMessages} 
-        style={styles.updateButton}
-        disabled={loading}
-      >
-        {loading ? '⏳ در حال بارگذاری...' : '🔄 بروزرسانی'}
-      </button>
+  const fetchMessages = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(apiUrl);
+      const data = await response.json();
 
-      {error && (
-        <div style={styles.error}>
-          ❌ {error}
+      if (data.ok) {
+        // فیلتر کردن پیام‌های کانال
+        const channelMessages = data.result
+          .filter(update => update.message && update.message.chat.type === 'channel')
+          .map(update => ({
+            id: update.update_id,
+            messageId: update.message.message_id,
+            text: update.message.text || '(پیام بدون متن)',
+            date: new Date(update.message.date * 1000).toLocaleString('fa-IR'),
+            channelTitle: update.message.chat.title || 'کانال',
+            channelUsername: update.message.chat.username || '',
+            hasMedia: update.message.photo || update.message.document || false
+          }));
+
+        setMessages(channelMessages);
+      } else {
+        setError('خطا در دریافت پیام‌ها');
+      }
+    } catch (err) {
+      setError('خطا در ارتباط با سرور');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // فرمت‌بندی متن با پشتیبانی از ایموجی و لینک
+  const formatText = (text) => {
+    if (!text) return null;
+    
+    // تشخیص لینک‌ها
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = text.split(urlRegex);
+    const matches = text.match(urlRegex) || [];
+
+    return parts.map((part, index) => {
+      if (matches.includes(part)) {
+        return (
+          <a key={index} href={part} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+            {part}
+          </a>
+        );
+      }
+      return <span key={index}>{part}</span>;
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">در حال بارگذاری پیام‌ها...</p>
         </div>
-      )}
-
-      <div style={styles.messagesList}>
-        {messages.length === 0 && !loading && !error && (
-          <p style={styles.noMessages}>هیچ پیامی در کانال یافت نشد</p>
-        )}
-
-        {messages.map((msg) => (
-          <div key={msg.id} style={styles.messageCard}>
-            <div style={styles.messageHeader}>
-              <span style={styles.channelTitle}>📌 {msg.channelTitle}</span>
-              {msg.channelUsername && (
-                <span style={styles.channelUsername}>@{msg.channelUsername}</span>
-              )}
-              <span style={styles.messageDate}>{msg.date}</span>
-            </div>
-            
-            <div style={styles.messageBody}>
-              <p style={styles.messageText}>{msg.text}</p>
-              {msg.hasMedia && (
-                <span style={styles.mediaBadge}>📎 دارای رسانه</span>
-              )}
-              {msg.isForwarded && (
-                <span style={styles.forwardedBadge}>↩️ بازنشر شده</span>
-              )}
-            </div>
-            
-            <div style={styles.messageFooter}>
-              <span style={styles.messageId}>شناسه: {msg.messageId}</span>
-            </div>
-          </div>
-        ))}
       </div>
+    );
+  }
 
-      {messages.length > 0 && (
-        <div style={styles.stats}>
-          📊 تعداد کل پیام‌ها: {messages.length}
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md text-center">
+          <svg className="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <h3 className="text-lg font-semibold text-red-800 mb-2">خطا</h3>
+          <p className="text-red-600">{error}</p>
+          <button 
+            onClick={fetchMessages}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+          >
+            تلاش مجدد
+          </button>
         </div>
-      )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8 px-4">
+      <div className="max-w-4xl mx-auto">
+        {/* هدر */}
+        <div className="bg-white rounded-t-xl shadow-sm border-b border-gray-200 p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">📢 پیام‌های کانال</h1>
+              <p className="text-gray-500 mt-1">{messages.length} پیام</p>
+            </div>
+            <button
+              onClick={fetchMessages}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              بروزرسانی
+            </button>
+          </div>
+        </div>
+
+        {/* لیست پیام‌ها */}
+        <div className="bg-white rounded-b-xl shadow-sm divide-y divide-gray-100">
+          {messages.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              <p>هیچ پیامی در کانال یافت نشد</p>
+            </div>
+          ) : (
+            messages.map((msg) => (
+              <div key={msg.id} className="p-6 hover:bg-gray-50 transition-colors">
+                <div className="flex items-start gap-3">
+                  {/* آواتار کانال */}
+                  <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
+                    {msg.channelTitle.charAt(0)}
+                  </div>
+                  
+                  <div className="flex-1 min-w-0">
+                    {/* هدر پیام */}
+                    <div className="flex items-center flex-wrap gap-2">
+                      <span className="font-semibold text-gray-900">{msg.channelTitle}</span>
+                      {msg.channelUsername && (
+                        <span className="text-sm text-gray-500">@{msg.channelUsername}</span>
+                      )}
+                      <span className="text-xs text-gray-400">•</span>
+                      <span className="text-xs text-gray-400" dir="ltr">{msg.date}</span>
+                      {msg.hasMedia && (
+                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">🖼️ رسانه</span>
+                      )}
+                    </div>
+                    
+                    {/* متن پیام */}
+                    <div className="mt-2 text-gray-800 whitespace-pre-wrap break-words">
+                      {formatText(msg.text)}
+                    </div>
+
+                    {/* متادیتا */}
+                    <div className="mt-2 flex items-center gap-4 text-xs text-gray-400">
+                      <span>شناسه: {msg.messageId}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* فوتر */}
+        <div className="mt-4 text-center text-sm text-gray-400">
+          {'نمایش پیام‌های کانال با استفاده از API Bale'}
+        </div>
+      </div>
     </div>
   );
-}
-
-const styles = {
-  container: {
-    maxWidth: '800px',
-    margin: '0 auto',
-    padding: '20px',
-    fontFamily: 'system-ui, -apple-system, sans-serif',
-    direction: 'rtl',
-    backgroundColor: '#f5f5f5',
-    minHeight: '100vh',
-  },
-  header: {
-    color: '#333',
-    borderBottom: '3px solid #4CAF50',
-    paddingBottom: '10px',
-    marginBottom: '20px',
-  },
-  updateButton: {
-    backgroundColor: '#4CAF50',
-    color: 'white',
-    border: 'none',
-    padding: '12px 24px',
-    borderRadius: '8px',
-    fontSize: '16px',
-    cursor: 'pointer',
-    marginBottom: '20px',
-    transition: 'background-color 0.3s',
-  },
-  error: {
-    backgroundColor: '#ffebee',
-    color: '#c62828',
-    padding: '15px',
-    borderRadius: '8px',
-    marginBottom: '20px',
-    border: '1px solid #ef9a9a',
-  },
-  noMessages: {
-    textAlign: 'center',
-    color: '#999',
-    padding: '40px',
-    backgroundColor: 'white',
-    borderRadius: '8px',
-  },
-  messagesList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '15px',
-  },
-  messageCard: {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    padding: '18px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-    border: '1px solid #e0e0e0',
-  },
-  messageHeader: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-    gap: '10px',
-    marginBottom: '12px',
-    paddingBottom: '10px',
-    borderBottom: '1px solid #eee',
-  },
-  channelTitle: {
-    fontWeight: 'bold',
-    color: '#1a237e',
-    fontSize: '16px',
-  },
-  channelUsername: {
-    color: '#666',
-    fontSize: '14px',
-    backgroundColor: '#f0f0f0',
-    padding: '2px 8px',
-    borderRadius: '4px',
-  },
-  messageDate: {
-    color: '#999',
-    fontSize: '12px',
-    marginRight: 'auto',
-  },
-  messageBody: {
-    marginBottom: '10px',
-  },
-  messageText: {
-    margin: '0',
-    lineHeight: '1.6',
-    color: '#333',
-    whiteSpace: 'pre-wrap',
-    wordBreak: 'break-word',
-  },
-  mediaBadge: {
-    display: 'inline-block',
-    backgroundColor: '#e3f2fd',
-    color: '#0d47a1',
-    padding: '3px 10px',
-    borderRadius: '12px',
-    fontSize: '12px',
-    marginTop: '8px',
-  },
-  forwardedBadge: {
-    display: 'inline-block',
-    backgroundColor: '#fff3e0',
-    color: '#e65100',
-    padding: '3px 10px',
-    borderRadius: '12px',
-    fontSize: '12px',
-    marginTop: '8px',
-    marginRight: '8px',
-  },
-  messageFooter: {
-    borderTop: '1px solid #eee',
-    paddingTop: '8px',
-    marginTop: '8px',
-  },
-  messageId: {
-    color: '#999',
-    fontSize: '11px',
-  },
-  stats: {
-    marginTop: '20px',
-    padding: '15px',
-    backgroundColor: '#e8f5e9',
-    borderRadius: '8px',
-    textAlign: 'center',
-    color: '#2e7d32',
-    fontWeight: 'bold',
-  },
 };
 
-export default HomePage;
+export default ChannelMessages;
