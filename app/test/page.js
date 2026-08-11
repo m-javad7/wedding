@@ -1,180 +1,211 @@
-"use client"
-import React, { useState, useEffect } from 'react';
+'use client';
 
-const ChannelMessages = () => {
-  const [messages, setMessages] = useState([]);
-  const [loading, setLoading] = useState(true);
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+export default function Home() {
+  const [updates, setUpdates] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // توکن ربات
-  const token = 'CBDGJA0OSJRJABPOQDDPEDXVKMLYQXISGUTBEAQREVQUGPCWZETZNFDSJLXQLYWD';
-  const apiUrl = `https://tapi.bale.ai/bot${token}/getUpdates`;
+  // آدرس API با Rewrite در Next.js
+  const apiUrl = '/bale-api/bot1101398776:xxNBOBYHUvmY4nj1pOB2QeLIJKEFPgdYEkU/getUpdates';
 
-  useEffect(() => {
-    fetchMessages();
-  }, []);
-
-  const fetchMessages = async () => {
+  const fetchUpdates = async () => {
+    setLoading(true);
+    setError(null);
+    
     try {
-      setLoading(true);
-      const response = await fetch(apiUrl);
-      const data = await response.json();
-
-      if (data.ok) {
-        // فیلتر کردن پیام‌های کانال
-        const channelMessages = data.result
-          .filter(update => update.message && update.message.chat.type === 'channel')
-          .map(update => ({
-            id: update.update_id,
-            messageId: update.message.message_id,
-            text: update.message.text || '(پیام بدون متن)',
-            date: new Date(update.message.date * 1000).toLocaleString('fa-IR'),
-            channelTitle: update.message.chat.title || 'کانال',
-            channelUsername: update.message.chat.username || '',
-            hasMedia: update.message.photo || update.message.document || false
-          }));
-
-        setMessages(channelMessages);
+      console.log('🚀 ارسال درخواست به:', apiUrl);
+      const response = await axios.get(apiUrl, {
+        timeout: 15000,
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      
+      console.log('✅ پاسخ دریافت شد:', response.status);
+      
+      if (response.status === 200 && response.data.ok) {
+        setUpdates(response.data.result);
+        console.log(`📊 ${response.data.result.length} بروزرسانی دریافت شد`);
       } else {
-        setError('خطا در دریافت پیام‌ها');
+        throw new Error('پاسخ API موفقیت‌آمیز نبود');
       }
     } catch (err) {
-      setError('خطا در ارتباط با سرور');
-      console.error(err);
+      let errorMessage = err.message;
+      
+      if (err.response) {
+        errorMessage = `خطای سرور (${err.response.status})`;
+        console.error('خطای سرور:', err.response.data);
+      } else if (err.code === 'ECONNABORTED') {
+        errorMessage = 'مدت زمان درخواست به پایان رسید';
+      } else if (err.message.includes('Network Error')) {
+        errorMessage = 'خطای شبکه یا CORS';
+      }
+      
+      setError(errorMessage);
+      console.error('❌ خطا:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  // فرمت‌بندی متن با پشتیبانی از ایموجی و لینک
-  const formatText = (text) => {
-    if (!text) return null;
-    
-    // تشخیص لینک‌ها
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    const parts = text.split(urlRegex);
-    const matches = text.match(urlRegex) || [];
+  const clearUpdates = () => {
+    setUpdates([]);
+    setError(null);
+  };
 
-    return parts.map((part, index) => {
-      if (matches.includes(part)) {
-        return (
-          <a key={index} href={part} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
-            {part}
-          </a>
-        );
-      }
-      return <span key={index}>{part}</span>;
+  const formatDate = (timestamp) => {
+    if (!timestamp) return 'تاریخ نامشخص';
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleString('fa-IR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
     });
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">در حال بارگذاری پیام‌ها...</p>
-        </div>
-      </div>
-    );
-  }
+  const getUpdateType = (update) => {
+    if (!update.message) return 'unknown';
+    if (update.message.new_chat_members) return 'member-join';
+    if (update.message.forward_from) return 'forwarded';
+    if (update.message.text) return 'message';
+    return 'other';
+  };
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md text-center">
-          <svg className="w-12 h-12 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <h3 className="text-lg font-semibold text-red-800 mb-2">خطا</h3>
-          <p className="text-red-600">{error}</p>
-          <button 
-            onClick={fetchMessages}
-            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
-          >
-            تلاش مجدد
-          </button>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    fetchUpdates();
+    
+    const interval = setInterval(() => {
+      if (!loading) {
+        fetchUpdates();
+      }
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* هدر */}
-        <div className="bg-white rounded-t-xl shadow-sm border-b border-gray-200 p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">📢 پیام‌های کانال</h1>
-              <p className="text-gray-500 mt-1">{messages.length} پیام</p>
-            </div>
-            <button
-              onClick={fetchMessages}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              بروزرسانی
-            </button>
-          </div>
-        </div>
+    <div id="app">
+      <h1>📨 پیام‌های دریافتی از ربات</h1>
+      <div className="controls">
+        <button onClick={fetchUpdates} disabled={loading} className="btn-primary">
+          {loading ? '⏳ در حال دریافت...' : '📥 دریافت پیام‌ها'}
+        </button>
+        {updates.length > 0 && (
+          <button onClick={clearUpdates} className="btn-secondary">
+            🗑️ پاک کردن
+          </button>
+        )}
+      </div>
 
-        {/* لیست پیام‌ها */}
-        <div className="bg-white rounded-b-xl shadow-sm divide-y divide-gray-100">
-          {messages.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              <svg className="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-              </svg>
-              <p>هیچ پیامی در کانال یافت نشد</p>
+      {error && (
+        <div className="error">
+          <strong>❌ خطا:</strong> {error}
+          {(error.includes('CORS') || error.includes('Network Error')) && (
+            <div className="cors-hint">
+              <p>💡 راه‌حل‌های رفع خطا:</p>
+              <ul>
+                <li>تنظیم rewrite در فایل <code>next.config.mjs</code></li>
+                <li>بررسی اتصال به اینترنت</li>
+                <li>استفاده از VPN در صورت نیاز</li>
+              </ul>
             </div>
-          ) : (
-            messages.map((msg) => (
-              <div key={msg.id} className="p-6 hover:bg-gray-50 transition-colors">
-                <div className="flex items-start gap-3">
-                  {/* آواتار کانال */}
-                  <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold text-sm">
-                    {msg.channelTitle.charAt(0)}
-                  </div>
-                  
-                  <div className="flex-1 min-w-0">
-                    {/* هدر پیام */}
-                    <div className="flex items-center flex-wrap gap-2">
-                      <span className="font-semibold text-gray-900">{msg.channelTitle}</span>
-                      {msg.channelUsername && (
-                        <span className="text-sm text-gray-500">@{msg.channelUsername}</span>
-                      )}
-                      <span className="text-xs text-gray-400">•</span>
-                      <span className="text-xs text-gray-400" dir="ltr">{msg.date}</span>
-                      {msg.hasMedia && (
-                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">🖼️ رسانه</span>
-                      )}
-                    </div>
-                    
-                    {/* متن پیام */}
-                    <div className="mt-2 text-gray-800 whitespace-pre-wrap break-words">
-                      {formatText(msg.text)}
-                    </div>
-
-                    {/* متادیتا */}
-                    <div className="mt-2 flex items-center gap-4 text-xs text-gray-400">
-                      <span>شناسه: {msg.messageId}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))
           )}
         </div>
+      )}
 
-        {/* فوتر */}
-        <div className="mt-4 text-center text-sm text-gray-400">
-          {'نمایش پیام‌های کانال با استفاده از API Bale'}
+      {updates.length > 0 ? (
+        <div className="updates-container">
+          <div className="stats">
+            <span>📊 تعداد پیام‌ها: {updates.length}</span>
+          </div>
+          
+          {updates.map((update) => (
+            <div key={update.update_id} className="update-item">
+              <div className="update-header">
+                <h3>🔄 بروزرسانی #{update.update_id}</h3>
+                <span className={`badge ${getUpdateType(update)}`}>
+                  {getUpdateType(update)}
+                </span>
+              </div>
+              
+              {update.message && (
+                <>
+                  <div className="message-meta">
+                    <p><strong>🆔 شناسه پیام:</strong> {update.message.message_id}</p>
+                    <p><strong>📅 تاریخ:</strong> {formatDate(update.message.date)}</p>
+                  </div>
+                  
+                  {update.message.from && (
+                    <div className="info-section">
+                      <h4>👤 فرستنده</h4>
+                      <p><strong>نام:</strong> {update.message.from.first_name} {update.message.from.last_name || ''}</p>
+                      <p><strong>شناسه کاربر:</strong> {update.message.from.id}</p>
+                      {update.message.from.username && (
+                        <p><strong>نام کاربری:</strong> @{update.message.from.username}</p>
+                      )}
+                    </div>
+                  )}
+                  
+                  {update.message.chat && (
+                    <div className="info-section">
+                      <h4>💬 چت</h4>
+                      <p><strong>نام:</strong> {update.message.chat.title || update.message.chat.first_name || 'چت خصوصی'}</p>
+                      <p><strong>نوع:</strong> {update.message.chat.type}</p>
+                      {update.message.chat.username && (
+                        <p><strong>نام کاربری:</strong> @{update.message.chat.username}</p>
+                      )}
+                    </div>
+                  )}
+
+                  {update.message.text && (
+                    <div className="message-content">
+                      <h4>📝 متن پیام</h4>
+                      <div className="message-text">{update.message.text}</div>
+                    </div>
+                  )}
+
+                  {update.message.new_chat_members && (
+                    <div className="info-section">
+                      <h4>👥 اعضای جدید</h4>
+                      <ul>
+                        {update.message.new_chat_members.map((member) => (
+                          <li key={member.id}>
+                            {member.first_name} {member.last_name || ''} 
+                            {member.username ? ` (@${member.username})` : ' (بدون نام کاربری)'}
+                            <span className={`badge ${member.is_bot ? 'bot' : 'user'}`}>
+                              {member.is_bot ? 'ربات' : 'کاربر'}
+                            </span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {update.message.forward_from && (
+                    <div className="info-section">
+                      <h4>↩️ فوروارد شده از</h4>
+                      <p>{update.message.forward_from.first_name} {update.message.forward_from.last_name || ''}</p>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          ))}
         </div>
-      </div>
+      ) : (
+        !loading && !error && (
+          <div className="empty-state">
+            <p>📭 هنوز پیامی دریافت نشده است</p>
+            <p className="hint">برای دریافت پیام‌ها، دکمه بالا را بزنید</p>
+          </div>
+        )
+      )}
     </div>
   );
-};
-
-export default ChannelMessages;
+}
