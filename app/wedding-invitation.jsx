@@ -1,12 +1,14 @@
 "use client";
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
-import { MapPin, Send, Heart, Volume2, VolumeX, ArrowLeft, Navigation, MessageCircle, Share2, Phone, Sparkles as SparklesIcon, X, ChevronRight, ChevronLeft, ShieldCheck, CheckCircle, AlertCircle, User } from 'lucide-react';
+import { MapPin, Send, Heart, Volume2, VolumeX, ArrowLeft, Navigation, MessageCircle, Share2, Phone, Sparkles as SparklesIcon, X, ChevronRight, ChevronLeft, ShieldCheck, CheckCircle, AlertCircle, User, Users } from 'lucide-react';
 
 /* ============================================================
    اطلاعات مراسم
    ============================================================ */
 const weddingInfo = {
   weddingDateTime: '2026-08-28T19:30:00',
+  weddingDurationHours: 4,
+  ceremonyLocationName: 'تالار مراسم',
   mapLink: 'https://maps.app.goo.gl/CLgomy6ba8KGDDq29',
   baladLink: 'https://balad.ir/p/5sJhngNV76jR2a',
   telegramLink: 'https://t.me/m_javad77',
@@ -15,8 +17,10 @@ const weddingInfo = {
   smsNumber: '09162149083',
   galleryPhotos: ['/images/a.webp', '/images/b.webp', '/images/c.webp'],
   musicFile: '/a.mp3',
+  paperSoundFile: '/paper.mp3',
   eitaaChatId: '11221180',
   baleBotUsername: 'your_bale_bot_username',
+  messagesFile: '/messages.json',
 };
 
 /* ============================================================
@@ -136,6 +140,92 @@ function useRomanticMusic() {
   }, []);
 
   return { start, pause, muted, toggleMute, isReady };
+}
+
+/* ---------------- صدای باز شدن نامه ---------------- */
+function usePaperSound() {
+  const audioRef = useRef(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const audio = new Audio(weddingInfo.paperSoundFile);
+    audio.volume = 0.55;
+    audio.preload = 'auto';
+    audioRef.current = audio;
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  const play = useCallback(() => {
+    if (!audioRef.current) return;
+    try {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => {});
+    } catch (e) {
+      // فایل صدا هنوز اضافه نشده - بی‌خطر رد می‌شویم
+    }
+  }, []);
+
+  return play;
+}
+
+/* ---------------- لرزش هنگام باز شدن (موبایل) ---------------- */
+function triggerOpenHaptics() {
+  if (typeof navigator !== 'undefined' && navigator.vibrate) {
+    navigator.vibrate([25, 15, 35]);
+  }
+}
+
+/* ---------------- شخصی‌سازی با نام مهمان (?name=) ---------------- */
+function useGuestName() {
+  const [guestName, setGuestName] = useState('');
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const params = new URLSearchParams(window.location.search);
+    const name = params.get('name') || params.get('guest');
+    if (name) setGuestName(decodeURIComponent(name).slice(0, 40));
+  }, []);
+
+  return guestName;
+}
+
+/* ---------------- دریافت پیام‌های مهمانان از JSON ---------------- */
+function useGuestMessages() {
+  const [messages, setMessages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(weddingInfo.messagesFile)
+      .then((r) => (r.ok ? r.json() : Promise.reject()))
+      .then((data) => {
+        if (!cancelled && data?.messages) {
+          setMessages(data.messages);
+          if (data.lastUpdated) setLastUpdated(data.lastUpdated);
+        }
+      })
+      .catch(() => {
+        // در صورت خطا، از داده‌های نمونه استفاده کن
+        setMessages([
+          { id: 1, from: 'عارفه', text: 'آمادهام مجلس رو بفرستم هوا! 💃🕺', date: '۱۴۰۳/۰۵/۱۷ - ۱۷:۲۹' },
+          { id: 2, from: 'محمد', text: 'حتماً میام با هدیه و رقص 🕺🎁', date: '۱۴۰۳/۰۵/۱۷ - ۱۱:۲۳' },
+          { id: 3, from: 'سارا', text: 'تبریک به شما عزیزان! بهترین آرزوها رو براتون دارم 💝', date: '۱۴۰۳/۰۵/۱۶ - ۲۰:۱۵' },
+        ]);
+        setLastUpdated('۱۴۰۳/۰۵/۱۷');
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  return { messages, loading, lastUpdated };
 }
 
 /* ============================================================
@@ -351,8 +441,134 @@ const BotanicalPatternSVG = React.memo(() => (
 ));
 BotanicalPatternSVG.displayName = 'BotanicalPatternSVG';
 
+/* ============================================================
+   طرح‌های دانتل (Lace)
+   ============================================================ */
+
+// بافت توری/دانتل - برای رویه پاکت
+const LaceNetPattern = React.memo(({ id, opacity = 0.4, color = '#fffdf6' }) => (
+  <svg
+    width="100%"
+    height="100%"
+    className="absolute inset-0"
+    style={{ mixBlendMode: 'soft-light', opacity }}
+    aria-hidden="true"
+  >
+    <defs>
+      <pattern id={id} x="0" y="0" width="46" height="46" patternUnits="userSpaceOnUse">
+        <g stroke={color} strokeWidth="0.6" fill="none" opacity="0.85">
+          <path d="M0,0 L23,23 L46,0" />
+          <path d="M0,46 L23,23 L46,46" />
+          <path d="M0,0 Q13,23 0,46" />
+          <path d="M46,0 Q33,23 46,46" />
+        </g>
+        <g fill={color} opacity="0.75">
+          <circle cx="23" cy="15.5" r="2.3" />
+          <circle cx="15.5" cy="23" r="2.3" />
+          <circle cx="30.5" cy="23" r="2.3" />
+          <circle cx="23" cy="30.5" r="2.3" />
+        </g>
+        <circle cx="23" cy="23" r="1.6" fill={COLORS.goldLight} opacity="0.85" />
+        <g fill={color} opacity="0.55">
+          <circle cx="0" cy="0" r="1.1" />
+          <circle cx="46" cy="0" r="1.1" />
+          <circle cx="0" cy="46" r="1.1" />
+          <circle cx="46" cy="46" r="1.1" />
+        </g>
+      </pattern>
+    </defs>
+    <rect width="100%" height="100%" fill={`url(#${id})`} />
+  </svg>
+));
+LaceNetPattern.displayName = 'LaceNetPattern';
+
+// نوار حاشیه دانتل (طرح هلالی گیپور) - برای لبه‌های پاکت و روبان
+const LaceScallopBorder = React.memo(({ count = 16, flip = false, color = '#fffdf6', opacity = 0.95, tone }) => {
+  const width = 400;
+  const sw = width / count;
+  const r = sw / 2;
+  const pad = 5;
+  const baseY = flip ? pad : r + pad;
+  const sweep = flip ? 1 : 0;
+
+  let d = `M0,${baseY} `;
+  for (let i = 0; i < count; i++) {
+    d += `a${r},${r} 0 0,${sweep} ${sw},0 `;
+  }
+
+  const dots = Array.from({ length: count }).map((_, i) => ({
+    x: i * sw + r,
+    y: flip ? baseY + r * 0.62 : baseY - r * 0.62,
+  }));
+
+  return (
+    <svg
+      width="100%"
+      height={r + pad * 2}
+      viewBox={`0 0 ${width} ${r + pad * 2}`}
+      preserveAspectRatio="none"
+      style={{ display: 'block', overflow: 'visible' }}
+      aria-hidden="true"
+    >
+      <path d={d} fill="none" stroke={color} strokeWidth="1.1" opacity={opacity} />
+      <line
+        x1="0" y1={flip ? r + pad * 2 - 1 : 1}
+        x2={width} y2={flip ? r + pad * 2 - 1 : 1}
+        stroke={color} strokeWidth="0.9" opacity={opacity * 0.65}
+      />
+      {dots.map((p, i) => (
+        <circle key={i} cx={p.x} cy={p.y} r="1.3" fill={tone || COLORS.gold} opacity={opacity * 0.8} />
+      ))}
+    </svg>
+  );
+});
+LaceScallopBorder.displayName = 'LaceScallopBorder';
+
+// مدال دانتل گرد - جایگزین انگ کاغذی روی روبان
+const LaceMedallionTag = React.memo(() => {
+  const size = 108;
+  const c = size / 2;
+  const rOuter = c - 6;
+  const scallops = 14;
+  const pts = Array.from({ length: scallops }).map((_, i) => {
+    const a = (i / scallops) * Math.PI * 2 - Math.PI / 2;
+    return [c + rOuter * Math.cos(a), c + rOuter * Math.sin(a)];
+  });
+  const armR = (Math.PI * rOuter * 2) / scallops / 2 + 0.5;
+  let d = `M ${pts[0][0]},${pts[0][1]} `;
+  for (let i = 1; i <= scallops; i++) {
+    const p = pts[i % scallops];
+    d += `A ${armR},${armR} 0 0,1 ${p[0]},${p[1]} `;
+  }
+  d += 'Z';
+
+  return (
+    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="absolute inset-0 drop-shadow-md">
+        <circle cx={c} cy={c} r={rOuter - 5} fill={COLORS.paper} stroke={COLORS.goldMatte} strokeWidth="0.9" />
+        <path d={d} fill="none" stroke={COLORS.goldMatte} strokeWidth="1" opacity="0.85" />
+        {pts.map((p, i) => (
+          <circle key={i} cx={p[0]} cy={p[1]} r="1.5" fill={COLORS.gold} opacity="0.8" />
+        ))}
+        <circle cx={c} cy={c} r={rOuter - 12} fill="none" stroke={COLORS.sage} strokeWidth="0.6" strokeDasharray="1.5 2.5" opacity="0.55" />
+      </svg>
+      <div className="relative z-10 flex flex-col items-center justify-center text-center px-3">
+        <Heart size={11} style={{ color: COLORS.gold }} className="mb-1" />
+        <span className="text-[10px] leading-tight font-serif font-bold tracking-wide text-gray-700">
+          Arefeh
+        </span>
+        <span className="text-[7px] leading-tight text-gray-400 tracking-widest -my-0.5">&</span>
+        <span className="text-[10px] leading-tight font-serif font-bold tracking-wide text-gray-700">
+          Mohammad
+        </span>
+      </div>
+    </div>
+  );
+});
+LaceMedallionTag.displayName = 'LaceMedallionTag';
+
 /* ---------------- Envelope ---------------- */
-const Envelope = React.memo(({ phase, onOpen }) => {
+const Envelope = React.memo(({ phase, onOpen, guestName }) => {
   const isOpening = phase === 'opening' || phase === 'open';
   const isOpen = phase === 'open';
 
@@ -398,25 +614,27 @@ const Envelope = React.memo(({ phase, onOpen }) => {
         />
 
         <div
-          className="relative w-full h-full rounded-lg overflow-hidden"
+          className="relative w-full h-full rounded-lg"
           style={{
             background: `linear-gradient(170deg, ${COLORS.linen} 0%, #f0ebe0 50%, ${COLORS.linen} 100%)`,
             boxShadow: '0 30px 60px -15px rgba(0,0,0,0.25), inset 0 2px 4px rgba(255,255,255,0.6), inset 0 -2px 4px rgba(0,0,0,0.05)',
             border: `1px solid ${COLORS.sageLight}`,
+            overflow: phase === 'closed' ? 'hidden' : 'visible',
           }}
         >
-          <div className="absolute inset-0 z-0 bg-[#e3e8e0]">
+          <div className="absolute inset-0 z-0 rounded-lg overflow-hidden bg-[#e3e8e0]">
             <BotanicalPatternSVG />
           </div>
 
           <div
-            className="absolute left-0 right-0 mx-auto w-[92%] bg-white rounded-t-xl overflow-hidden z-10 shadow-md transition-all duration-1000 ease-in-out"
+            className="absolute left-0 right-0 mx-auto w-[92%] bg-white rounded-t-xl overflow-hidden z-10 shadow-md"
             style={{
-              bottom: isOpening ? '22%' : '12%',
-              transform: isOpening ? 'translateY(-60px) scale(1.01)' : 'translateY(0)',
+              bottom: isOpening ? '44%' : '12%',
+              transform: isOpening ? 'translateY(-6px) rotate(-1deg) scale(1.03)' : 'translateY(0) rotate(0deg) scale(1)',
+              transition: 'bottom 1.2s cubic-bezier(0.22,1,0.36,1), transform 1.2s cubic-bezier(0.22,1,0.36,1)',
               border: '1px solid #e0d8c8',
-              maxHeight: '80%',
-              boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+              maxHeight: '82%',
+              boxShadow: '0 14px 34px rgba(0,0,0,0.18)',
             }}
           >
             <img
@@ -437,7 +655,9 @@ const Envelope = React.memo(({ phase, onOpen }) => {
               boxShadow: '3px 0 15px rgba(0,0,0,0.12)',
             }}
           >
-            <div className="w-full h-full" style={{ background: `linear-gradient(145deg, ${COLORS.envelopeGreenLight}, ${COLORS.envelopeGreen})` }} />
+            <div className="w-full h-full relative" style={{ background: `linear-gradient(145deg, ${COLORS.envelopeGreenLight}, ${COLORS.envelopeGreen})` }}>
+              <LaceNetPattern id="laceLeftFlap" opacity={0.4} />
+            </div>
           </div>
 
           <div
@@ -449,7 +669,9 @@ const Envelope = React.memo(({ phase, onOpen }) => {
               boxShadow: '-3px 0 15px rgba(0,0,0,0.12)',
             }}
           >
-            <div className="w-full h-full" style={{ background: `linear-gradient(-145deg, ${COLORS.envelopeGreenLight}, ${COLORS.envelopeGreenDark})` }} />
+            <div className="w-full h-full relative" style={{ background: `linear-gradient(-145deg, ${COLORS.envelopeGreenLight}, ${COLORS.envelopeGreenDark})` }}>
+              <LaceNetPattern id="laceRightFlap" opacity={0.4} />
+            </div>
           </div>
 
           <div
@@ -460,7 +682,9 @@ const Envelope = React.memo(({ phase, onOpen }) => {
               background: COLORS.envelopeGreen,
               boxShadow: '0 -5px 20px rgba(0,0,0,0.08)',
             }}
-          />
+          >
+            <LaceNetPattern id="laceBottomFlap" opacity={0.4} />
+          </div>
 
           <div
             className="absolute inset-0 z-30 pointer-events-none transition-all duration-500 ease-out"
@@ -470,34 +694,34 @@ const Envelope = React.memo(({ phase, onOpen }) => {
             }}
           >
             <div
-              className="absolute w-full h-[3px] top-[37%]"
-              style={{
-                background: 'linear-gradient(90deg, #bfa054, #f5e4a6, #bfa054)',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-              }}
-            />
-            <div
-              className="absolute w-full h-[3px] top-[43%]"
-              style={{
-                background: 'linear-gradient(90deg, #bfa054, #f5e4a6, #bfa054)',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-              }}
-            />
+              className="absolute w-full"
+              style={{ top: '46%', height: '10%' }}
+            >
+              <div className="absolute inset-x-0 top-0">
+                <LaceScallopBorder count={26} flip={false} color="#fffdf6" opacity={0.85} tone={COLORS.goldLight} />
+              </div>
+              <div
+                className="absolute inset-x-0"
+                style={{
+                  top: '38%',
+                  height: '24%',
+                  background: 'linear-gradient(90deg, #bfa054, #f5e4a6, #bfa054)',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+                }}
+              />
+            </div>
 
             <div
-              className="absolute left-[26%] top-[38%] w-[130px] h-[58px] bg-[#f7f5ee] rounded-sm p-2 shadow-xl border border-amber-200/60 transform -rotate-[22deg] flex flex-col justify-between overflow-hidden"
+              className="absolute left-1/2 top-[52%]"
               style={{
-                boxShadow: '3px 8px 25px rgba(0,0,0,0.2), inset 0 1px 2px rgba(255,255,255,0.5)',
+                filter: 'drop-shadow(3px 8px 14px rgba(0,0,0,0.22))',
+                transform: isOpening
+                  ? 'translate(-50%, -50%) rotate(420deg) scale(0.75)'
+                  : 'translate(-50%, -50%) rotate(0deg) scale(1)',
+                transition: 'transform 0.6s cubic-bezier(0.45, 0, 0.2, 1)',
               }}
             >
-              <BotanicalPatternSVG />
-              <div className="relative z-10 flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-full bg-gray-400/50 border border-gray-600/30" />
-                <span className="text-[10px] font-serif font-bold text-gray-700 tracking-wider">
-                  Arefeh & Mohammad
-                </span>
-              </div>
-              <span className="relative z-10 text-[8px] text-gray-500 self-end italic">Invitation</span>
+              <LaceMedallionTag />
             </div>
           </div>
 
@@ -529,6 +753,11 @@ const Envelope = React.memo(({ phase, onOpen }) => {
           opacity: phase === 'closed' ? 0.6 : 0,
         }}
       >
+        {guestName && (
+          <p className="text-sm font-medium mb-1.5" style={{ color: COLORS.sageDark }}>
+            {guestName} عزیز 🌿
+          </p>
+        )}
         <p className="text-xs font-light text-gray-600 tracking-wide flex items-center justify-center gap-1.5 opacity-80">
           <span
             className="inline-block w-1.5 h-1.5 rounded-full animate-pulse"
@@ -545,7 +774,146 @@ Envelope.displayName = 'Envelope';
 /* ============================================================
    INVITATION CARD - اضافه شده
    ============================================================ */
-function InvitationCard({ visible, onReset }) {
+
+// کامپوننت نمایش نقشه واقعی با گوگل مپ
+// کامپوننت نمایش نقشه واقعی با گوگل مپ - نسخه ساده و مطمئن
+const RealMapPreview = React.memo(() => {
+  // استفاده از موقعیت پیش‌فرض (تهران)
+  const defaultLat = 35.6892;
+  const defaultLng = 51.3890;
+  
+  // تلاش برای استخراج مختصات از لینک
+  const getCoordinates = () => {
+    const match = weddingInfo.mapLink.match(/@([-+]?\d+\.\d+),([-+]?\d+\.\d+)/);
+    if (match) {
+      return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
+    }
+    return { lat: defaultLat, lng: defaultLng };
+  };
+  
+  const coords = getCoordinates();
+  
+  // ساخت URL نقشه با استفاده از API ساده گوگل
+  const mapUrl = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4056.4867639029408!2d54.37363117613587!3d31.82582763198631!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3fa61ec2f947a14f%3A0x8549431694bc2ce0!2sRah%20O%20Ma%20Hotel%20%26%20Restaurant!5e1!3m2!1sen!2s!4v1786420538726!5m2!1sen!2s" width="300" height="200" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="strict-origin-when-cross-origin`;
+  return (
+    <div className="relative w-full rounded-2xl overflow-hidden" style={{ height: 200, background: COLORS.linen }}>
+      <iframe
+        src={mapUrl}
+        width="100%"
+        height="100%"
+        style={{ border: 0, borderRadius: '12px' }}
+        allowFullScreen
+        loading="lazy"
+        referrerPolicy="no-referrer-when-downgrade"
+        title="نقشه مکان مراسم"
+      />
+      <div 
+        className="absolute bottom-2 left-2 right-2 flex justify-center pointer-events-none"
+        style={{ opacity: 0.6 }}
+      >
+        <span className="text-[10px] px-3 py-1 rounded-full bg-white/90 text-gray-600 shadow-md">
+          {weddingInfo.ceremonyLocationName}
+        </span>
+      </div>
+    </div>
+  );
+});
+RealMapPreview.displayName = 'RealMapPreview';
+
+// کامپوننت نمایش پیام‌های مهمانان
+const GuestMessages = React.memo(() => {
+  const { messages, loading, lastUpdated } = useGuestMessages();
+  const [expanded, setExpanded] = useState(false);
+  const displayMessages = expanded ? messages : messages.slice(0, 3);
+
+  if (loading) {
+    return (
+      <div className="w-full flex flex-col items-center gap-3 p-4 rounded-xl" style={{ background: 'rgba(152,169,141,0.06)', border: `1px solid ${COLORS.sageLight}` }}>
+        <div className="flex items-center gap-2">
+          <Users size={16} style={{ color: COLORS.sage }} />
+          <span className="text-sm font-medium" style={{ color: COLORS.sageDark }}>پیام‌های مهمانان</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-2 border-sage border-t-transparent" style={{ borderColor: `${COLORS.sage} transparent transparent transparent` }} />
+          <span className="text-xs text-gray-400">در حال بارگذاری...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (messages.length === 0) {
+    return (
+      <div className="w-full flex flex-col items-center gap-2 p-4 rounded-xl" style={{ background: 'rgba(152,169,141,0.06)', border: `1px solid ${COLORS.sageLight}` }}>
+        <Users size={20} style={{ color: COLORS.sage }} />
+        <span className="text-sm text-gray-500">هنوز پیامی دریافت نشده است</span>
+        <span className="text-xs text-gray-400">اولین پیام را شما ارسال کنید ✨</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full flex flex-col gap-3 p-4 rounded-xl" style={{ background: 'rgba(152,169,141,0.06)', border: `1px solid ${COLORS.sageLight}` }}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Users size={16} style={{ color: COLORS.sage }} />
+          <span className="text-sm font-medium" style={{ color: COLORS.sageDark }}>پیام‌های مهمانان</span>
+          <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: COLORS.sageLight, color: COLORS.sageDark }}>
+            {toFa(messages.length)}
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          {lastUpdated && (
+            <span className="text-[9px] text-gray-400">آخرین بروزرسانی: {lastUpdated}</span>
+          )}
+          {messages.length > 3 && (
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="text-xs font-medium transition-colors cursor-pointer hover:opacity-70"
+              style={{ color: COLORS.sage }}
+            >
+              {expanded ? 'بستن' : `+${toFa(messages.length - 3)} پیام دیگر`}
+            </button>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3 max-h-[350px] overflow-y-auto px-1 custom-scrollbar">
+        {displayMessages.map((msg) => (
+          <div
+            key={msg.id}
+            className="flex flex-col gap-1 p-3 rounded-xl transition-all hover:shadow-sm"
+            style={{ background: 'rgba(255,255,255,0.7)', border: `1px solid ${COLORS.bone}` }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: COLORS.sage }}>
+                  {msg.from.charAt(0)}
+                </div>
+                <span className="text-sm font-medium" style={{ color: COLORS.sageDark }}>
+                  {msg.from}
+                </span>
+                <span>
+                  <Heart size={10} style={{ color: COLORS.gold }} fill={COLORS.gold} />
+                </span>
+              </div>
+              <span className="text-[10px] text-gray-400">{msg.date}</span>
+            </div>
+            <p className="text-sm text-gray-700 leading-relaxed pr-8" style={{ direction: 'rtl' }}>
+              {msg.text}
+            </p>
+            <div className="flex items-center gap-1 mt-1 pr-8">
+              
+
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+});
+GuestMessages.displayName = 'GuestMessages';
+
+function InvitationCard({ visible, onReset, guestName }) {
   const { days, hours, minutes, seconds, isOver } = useCountdown(weddingInfo.weddingDateTime);
 
   return (
@@ -606,6 +974,11 @@ function InvitationCard({ visible, onReset }) {
             background: `linear-gradient(180deg, ${COLORS.paper}, #f4f1e6)`,
             borderTop: `1px solid ${COLORS.sageLight}`
           }}>
+            {guestName && (
+              <span className="text-xs font-medium mb-2 px-3 py-1 rounded-full" style={{ color: COLORS.sageDark, background: 'rgba(152,169,141,0.12)' }}>
+                {guestName} عزیز، خوش آمدید 🌿
+              </span>
+            )}
             <span className="text-xs font-medium tracking-[0.2em] uppercase" style={{ color: COLORS.sageDark }}>
               {isOver ? '🎉 مراسم آغاز شد' : '⏳ زمان تا شروع مراسم'}
             </span>
@@ -616,6 +989,9 @@ function InvitationCard({ visible, onReset }) {
             background: `linear-gradient(0deg, ${COLORS.paper}, #f8f6f0)`,
             borderTop: `1px solid ${COLORS.bone}`
           }}>
+            {/* نقشه واقعی گوگل */}
+            <RealMapPreview />
+
             <div className="flex flex-wrap items-center justify-center gap-2.5 w-full">
               <a
                 href={weddingInfo.mapLink}
@@ -645,7 +1021,10 @@ function InvitationCard({ visible, onReset }) {
               </a>
             </div>
 
-            <MessageSender />
+            {/* پیام‌های مهمانان */}
+            <GuestMessages />
+
+            <MessageSender guestName={guestName}/>
           </div>
         </div>
       </div>
@@ -656,12 +1035,16 @@ function InvitationCard({ visible, onReset }) {
 /* ============================================================
    MessageSender
    ============================================================ */
-const MessageSender = React.memo(() => {
-  const [userName, setUserName] = useState('');
+const MessageSender = React.memo(({ guestName, onSuccess }) => {
+  const [userName, setUserName] = useState(guestName || '');
   const [message, setMessage] = useState('');
   const [showOptions, setShowOptions] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [sendResult, setSendResult] = useState(null);
+
+  useEffect(() => {
+    if (guestName) setUserName((prev) => prev || guestName);
+  }, [guestName]);
 
   const funnyPresets = useMemo(() => [
     "آماده‌ام مجلس رو بفرستم هوا! 💃🕺",
@@ -715,6 +1098,7 @@ const MessageSender = React.memo(() => {
           });
           setMessage('');
           setUserName('');
+          if (typeof onSuccess === 'function') onSuccess();
         } else {
           setSendResult({
             success: false,
@@ -748,7 +1132,7 @@ const MessageSender = React.memo(() => {
       default:
         break;
     }
-  }, [userName, message]);
+  }, [userName, message, onSuccess]);
 
   const SendButton = useCallback(({ onClick, isLoading }) => (
     <button
@@ -971,6 +1355,8 @@ const HeartButton = React.memo(({ children, onClick }) => {
 HeartButton.displayName = 'HeartButton';
 
 /* ---------------- PhotoGallery ---------------- */
+const polaroidRotations = [-6, 4, -3, 7, -4, 3, -7, 5];
+
 function PhotoGallery() {
   const [photos, setPhotos] = useState([]);
   const [activePhotoIndex, setActivePhotoIndex] = useState(null);
@@ -1082,46 +1468,59 @@ function PhotoGallery() {
       <h3 className="mt-1 text-2xl sm:text-3xl font-extrabold" style={GOLD_TEXT}>گالری تصاویر</h3>
       <Divider />
 
-      <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-4 sm:gap-6 w-full max-w-[650px] px-2">
+      <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-6 sm:gap-8 w-full max-w-[650px] px-2">
         {!loading && photos.length > 0 ? (
-          photos.map((photoUrl, idx) => (
-            <div
-              key={idx}
-              onClick={() => setActivePhotoIndex(idx)}
-              className="gallery-image-container group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-500 hover:-translate-y-1.5 hover:shadow-2xl"
-              style={{
-                aspectRatio: '3 / 4',
-                background: COLORS.linen,
-                boxShadow: '0 10px 30px rgba(58,53,40,0.1), 0 0 0 1px rgba(152,169,141,0.3)',
-                userSelect: 'none',
-                WebkitUserSelect: 'none',
-              }}
-            >
+          photos.map((photoUrl, idx) => {
+            const rotate = polaroidRotations[idx % polaroidRotations.length];
+            return (
               <div
-                className="w-full h-full absolute inset-0 transition-transform duration-700 group-hover:scale-110"
+                key={idx}
+                onClick={() => setActivePhotoIndex(idx)}
+                className="gallery-image-container polaroid-card relative cursor-pointer"
                 style={{
-                  backgroundImage: `url(${photoUrl})`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  pointerEvents: 'none',
+                  '--rot': `${rotate}deg`,
+                  userSelect: 'none',
+                  WebkitUserSelect: 'none',
                 }}
-              />
+              >
+                <div
+                  className="relative p-2.5 pb-6"
+                  style={{
+                    background: '#fffdfa',
+                    boxShadow: '0 10px 26px rgba(58,53,40,0.18), 0 0 0 1px rgba(0,0,0,0.04)',
+                  }}
+                >
+                  <div className="group relative overflow-hidden" style={{ aspectRatio: '3 / 4', background: COLORS.linen }}>
+                    <div
+                      className="w-full h-full absolute inset-0 transition-transform duration-700 group-hover:scale-110"
+                      style={{
+                        backgroundImage: `url(${photoUrl})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center',
+                        pointerEvents: 'none',
+                      }}
+                    />
 
-              <div className="absolute inset-0 rounded-2xl border-2 border-emerald-500/10 group-hover:border-emerald-500/40 transition-colors duration-300 pointer-events-none" />
+                    <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-3">
+                      <span className="text-[10px] text-amber-100 font-light tracking-widest bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/20">
+                        مشاهده تصویر
+                      </span>
+                    </div>
 
-              <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-3">
-                <span className="text-[11px] text-amber-100 font-light tracking-widest bg-black/40 backdrop-blur-md px-3 py-1 rounded-full border border-white/20">
-                  مشاهده تصویر
-                </span>
-              </div>
+                    <div className="absolute top-2 right-2 z-20 opacity-70 group-hover:opacity-100 transition-opacity">
+                      <div className="bg-black/40 backdrop-blur-md rounded-full p-1.5 border border-white/20">
+                        <ShieldCheck size={11} className="text-amber-200" />
+                      </div>
+                    </div>
+                  </div>
 
-              <div className="absolute top-2.5 right-2.5 z-20 opacity-70 group-hover:opacity-100 transition-opacity">
-                <div className="bg-black/40 backdrop-blur-md rounded-full p-1.5 border border-white/20">
-                  <ShieldCheck size={12} className="text-amber-200" />
+                  <div className="pt-2 flex items-center justify-center">
+                    <Heart size={10} style={{ color: COLORS.gold }} fill={COLORS.gold} />
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           [1, 2, 3].map((item) => (
             <div
@@ -1287,17 +1686,21 @@ export default function WeddingInvitation() {
   const [showConfetti, setShowConfetti] = useState(false);
   const timerRef = useRef(null);
   const music = useRomanticMusic();
+  const playPaperSound = usePaperSound();
+  const guestName = useGuestName();
 
   const handleOpen = useCallback(() => {
     if (phase !== 'closed') return;
     setPhase('opening');
     setShowConfetti(true);
     music.start();
+    playPaperSound();
+    triggerOpenHaptics();
     timerRef.current = setTimeout(() => {
       setPhase('open');
       setTimeout(() => setShowConfetti(false), 3000);
-    }, 1100);
-  }, [phase, music]);
+    }, 1450);
+  }, [phase, music, playPaperSound]);
 
   const handleReset = useCallback(() => {
     clearTimeout(timerRef.current);
@@ -1415,6 +1818,25 @@ export default function WeddingInvitation() {
           -webkit-touch-callout: none;
           -webkit-user-drag: none;
         }
+        .polaroid-card {
+          transform: rotate(var(--rot, 0deg));
+          transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.5s ease;
+          will-change: transform;
+        }
+        .polaroid-card:hover {
+          transform: rotate(0deg) scale(1.06) translateY(-6px);
+          z-index: 5;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #c2cdbb;
+          border-radius: 10px;
+        }
       `}</style>
 
       <HeartBubbles />
@@ -1460,8 +1882,8 @@ export default function WeddingInvitation() {
         )}
 
         <div className="relative z-10 w-full flex items-center justify-center" style={{ minHeight: 520 }}>
-          <Envelope phase={phase} onOpen={handleOpen} />
-          <InvitationCard visible={phase === 'open'} onReset={handleReset} />
+          <Envelope phase={phase} onOpen={handleOpen} guestName={guestName} />
+          <InvitationCard visible={phase === 'open'} onReset={handleReset} guestName={guestName} />
         </div>
       </div>
 
