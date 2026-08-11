@@ -7,9 +7,14 @@ export default function Home() {
   const [updates, setUpdates] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [messageText, setMessageText] = useState('');
+  const [sending, setSending] = useState(false);
+  const [sendResult, setSendResult] = useState(null);
 
   // آدرس API با Rewrite در Next.js
-  const apiUrl = '/bale-api/bot1101398776:xxNBOBYHUvmY4nj1pOB2QeLIJKEFPgdYEkU/getUpdates';
+  const botToken = '1101398776:xxNBOBYHUvmY4nj1pOB2QeLIJKEFPgdYEkU';
+  const apiUrl = `/bale-api/bot${botToken}/getUpdates`;
+  const sendMessageUrl = `/bale-api/bot${botToken}/sendMessage`;
 
   const fetchUpdates = async () => {
     setLoading(true);
@@ -51,9 +56,79 @@ export default function Home() {
     }
   };
 
+  // تابع ارسال پیام
+  const sendMessage = async () => {
+    if (!messageText.trim()) {
+      setSendResult({ type: 'error', text: 'لطفاً متن پیام را وارد کنید' });
+      return;
+    }
+
+    // پیدا کردن chat_id از اولین بروزرسانی
+    if (updates.length === 0) {
+      setSendResult({ type: 'error', text: 'هیچ چتی برای ارسال پیام وجود ندارد. ابتدا پیام‌ها را دریافت کنید.' });
+      return;
+    }
+
+    const chatId = updates[0]?.message?.chat?.id;
+    if (!chatId) {
+      setSendResult({ type: 'error', text: 'شناسه چت پیدا نشد' });
+      return;
+    }
+
+    setSending(true);
+    setSendResult(null);
+
+    try {
+      console.log('📤 ارسال پیام به:', sendMessageUrl);
+      const response = await axios.post(sendMessageUrl, {
+        chat_id: chatId,
+        text: messageText,
+        parse_mode: 'HTML'
+      }, {
+        timeout: 15000,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+
+      console.log('✅ پیام ارسال شد:', response.data);
+      
+      if (response.status === 200 && response.data.ok) {
+        setSendResult({ 
+          type: 'success', 
+          text: '✅ پیام با موفقیت ارسال شد!',
+          data: response.data.result
+        });
+        setMessageText(''); // پاک کردن متن پس از ارسال موفق
+        // دریافت مجدد بروزرسانی‌ها برای دیدن پیام ارسال شده
+        setTimeout(() => fetchUpdates(), 1000);
+      } else {
+        throw new Error('ارسال پیام ناموفق بود');
+      }
+    } catch (err) {
+      let errorMessage = err.message;
+      
+      if (err.response) {
+        errorMessage = `خطای سرور (${err.response.status}): ${JSON.stringify(err.response.data)}`;
+        console.error('خطای سرور:', err.response.data);
+      } else if (err.code === 'ECONNABORTED') {
+        errorMessage = 'مدت زمان درخواست به پایان رسید';
+      } else if (err.message.includes('Network Error')) {
+        errorMessage = 'خطای شبکه یا CORS';
+      }
+      
+      setSendResult({ type: 'error', text: `❌ خطا در ارسال: ${errorMessage}` });
+      console.error('❌ خطا در ارسال:', err);
+    } finally {
+      setSending(false);
+    }
+  };
+
   const clearUpdates = () => {
     setUpdates([]);
     setError(null);
+    setSendResult(null);
   };
 
   const formatDate = (timestamp) => {
@@ -92,6 +167,41 @@ export default function Home() {
   return (
     <div id="app">
       <h1>📨 پیام‌های دریافتی از ربات</h1>
+      
+      {/* بخش ارسال پیام */}
+      <div className="send-message-section">
+        <h2>📤 ارسال پیام به ربات</h2>
+        <div className="send-message-container">
+          <textarea
+            value={messageText}
+            onChange={(e) => setMessageText(e.target.value)}
+            placeholder="متن پیام خود را وارد کنید..."
+            className="message-input"
+            rows="3"
+            disabled={sending}
+          />
+          <div className="send-controls">
+            <button 
+              onClick={sendMessage} 
+              disabled={sending || loading}
+              className="btn-send"
+            >
+              {sending ? '⏳ در حال ارسال...' : '📤 ارسال پیام'}
+            </button>
+            {updates.length > 0 && (
+              <span className="chat-info">
+                💬 ارسال به: {updates[0]?.message?.chat?.title || updates[0]?.message?.chat?.first_name || 'چت خصوصی'}
+              </span>
+            )}
+          </div>
+          {sendResult && (
+            <div className={`send-result ${sendResult.type}`}>
+              {sendResult.text}
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="controls">
         <button onClick={fetchUpdates} disabled={loading} className="btn-primary">
           {loading ? '⏳ در حال دریافت...' : '📥 دریافت پیام‌ها'}
