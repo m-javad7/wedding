@@ -54,7 +54,7 @@ const GOLD_TEXT = {
   animation: 'shimmer 6s linear infinite',
 };
 
-const INVITE_IMAGE_URL = 'images/v.webp';
+const INVITE_IMAGE_URL = '/images/v.webp';
 
 /* ============================================================
    توابع کمکی
@@ -64,15 +64,23 @@ const toFa = (input) => {
   return String(input).replace(/[0-9]/g, (d) => map[d]);
 };
 
+// رنگ ثابت و قابل پیش‌بینی برای هر نام، برای تنوع بصری آواتار مهمانان
+const nameToAvatarGradient = (name = '') => {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  const hue = Math.abs(hash) % 360;
+  return `linear-gradient(135deg, hsl(${hue}, 32%, 52%), hsl(${(hue + 35) % 360}, 28%, 38%))`;
+};
+
 function useCountdown(targetISO) {
   const target = useMemo(() => new Date(targetISO).getTime(), [targetISO]);
   const [now, setNow] = useState(() => Date.now());
-  
+
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
-  
+
   const diff = Math.max(target - now, 0);
   return useMemo(() => ({
     days: Math.floor(diff / 86400000),
@@ -164,7 +172,7 @@ function usePaperSound() {
     if (!audioRef.current) return;
     try {
       audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(() => {});
+      audioRef.current.play().catch(() => { });
     } catch (e) {
       // فایل صدا هنوز اضافه نشده - بی‌خطر رد می‌شویم
     }
@@ -332,13 +340,14 @@ ConfettiEffect.displayName = 'ConfettiEffect';
 
 // 3. حباب‌های قلبی
 const HeartBubbles = React.memo(() => {
-  const bubbles = useMemo(() => Array.from({ length: 6 }).map((_, i) => ({
+  const bubbles = useMemo(() => Array.from({ length: 8 }).map((_, i) => ({
     id: i,
-    size: 12 + Math.random() * 20,
-    left: 5 + Math.random() * 90,
-    delay: Math.random() * 15,
+    size: 12 + Math.random() * 25,
+    left: 2 + Math.random() * 90,
+    delay: Math.random() * 14,
     duration: 20 + Math.random() * 15,
-    opacity: 0.04 + Math.random() * 0.06,
+    opacity: 0.04 + Math.random() * 0.08,
+    emoji: ['❤️', '💕', '💖', '✨', '🌸'][Math.floor(Math.random() * 5)],
   })), []);
 
   return (
@@ -356,7 +365,7 @@ const HeartBubbles = React.memo(() => {
             transform: 'translateX(-50%)',
           }}
         >
-          ❤️
+          {b.emoji}
         </div>
       ))}
     </>
@@ -375,50 +384,116 @@ const GlowingCountdown = React.memo(() => {
     { value: seconds, label: 'ثانیه' },
   ], [days, hours, minutes, seconds]);
 
+  if (isOver) {
+    return (
+      <div className="flex flex-col items-center gap-1 mt-2">
+        <span className="text-lg font-bold" style={{ color: COLORS.gold }}>
+          🎉 مراسم آغاز شد!
+        </span>
+        <span className="text-xs" style={{ color: COLORS.sage }}>
+          لحظات خوشی رو براتون آرزومندیم ❤️
+        </span>
+      </div>
+    );
+  }
+
+  const isUrgent = days < 1;
+
   return (
-    <div className="flex gap-3 justify-center flex-row-reverse">
+    <div
+      className="flex gap-1.5 sm:gap-2 justify-center flex-row-reverse mt-1.5"
+      role="timer"
+      aria-live="polite"
+      aria-label={`${toFa(days)} روز و ${toFa(hours)} ساعت و ${toFa(minutes)} دقیقه تا شروع مراسم`}
+    >
       {items.map((item, i) => (
         <div
           key={i}
-          className="relative flex flex-col items-center p-3 rounded-xl min-w-[70px]"
+          className="relative flex flex-col items-center px-2 py-1.5 sm:px-3 sm:py-2 rounded-xl min-w-[42px] sm:min-w-[52px]"
           style={{
-            background: 'rgba(255,255,255,0.1)',
+            background: 'linear-gradient(160deg, rgba(255,255,255,0.35), rgba(255,255,255,0.05))',
             backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(201,162,75,0.2)',
-            boxShadow: '0 8px 32px rgba(201,162,75,0.1)',
+            border: `1px solid ${isUrgent ? 'rgba(201,162,75,0.35)' : 'rgba(201,162,75,0.12)'}`,
+            boxShadow: '0 2px 8px rgba(201,162,75,0.03), inset 0 1px 0 rgba(255,255,255,0.35)',
+            animation: isUrgent ? 'urgentPulse 1.8s ease-in-out infinite' : 'none',
           }}
         >
-          <span className="text-2xl sm:text-3xl font-bold" style={GOLD_TEXT}>
+          {/* عدد با رنگ طلایی و سایز کوچک */}
+          <span
+            className="text-lg sm:text-xl font-bold tracking-wide tabular-nums"
+            style={{
+              color: COLORS.goldMatte,
+              textShadow: '0 1px 6px rgba(201,162,75,0.15)',
+              lineHeight: 1.2,
+            }}
+          >
             {toFa(item.value)}
           </span>
-          <span className="text-[10px] mt-1 text-gray-500">
+
+          {/* برچسب با فونت کوچک‌تر */}
+          <span
+            className="text-[8px] sm:text-[9px] mt-0.5 font-light tracking-widest"
+            style={{
+              color: '#56664d',
+              opacity: 0.5,
+              letterSpacing: '0.5px',
+            }}
+          >
             {item.label}
           </span>
+
+          {/* نقطه تزیینی کوچک */}
+          <div
+            className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
+            style={{
+              background: COLORS.gold,
+              opacity: 0.2,
+            }}
+          />
         </div>
       ))}
     </div>
   );
 });
 GlowingCountdown.displayName = 'GlowingCountdown';
+const CORNER_ROTATION = { tl: 0, tr: 90, br: 180, bl: 270 };
+const CORNER_POSITION = {
+  tl: { top: -9, left: -9 },
+  tr: { top: -9, right: -9 },
+  br: { bottom: -9, right: -9 },
+  bl: { bottom: -9, left: -9 },
+};
 
 const CornerBracket = React.memo(({ position }) => {
-  const size = 14;
-  const base = { position: 'absolute', width: size, height: size, borderColor: COLORS.gold, opacity: 0.7 };
-  const byPos = {
-    tl: { top: -6, left: -6, borderTop: '1.2px solid', borderLeft: '1.2px solid' },
-    tr: { top: -6, right: -6, borderTop: '1.2px solid', borderRight: '1.2px solid' },
-    bl: { bottom: -6, left: -6, borderBottom: '1.2px solid', borderLeft: '1.2px solid' },
-    br: { bottom: -6, right: -6, borderBottom: '1.2px solid', borderRight: '1.2px solid' },
-  };
-  return <span aria-hidden="true" style={{ ...base, ...byPos[position] }} />;
+  const size = 22;
+  return (
+    <span
+      aria-hidden="true"
+      className="absolute pointer-events-none"
+      style={{
+        width: size,
+        height: size,
+        ...CORNER_POSITION[position],
+        transform: `rotate(${CORNER_ROTATION[position]}deg)`,
+      }}
+    >
+      <svg width={size} height={size} viewBox="0 0 22 22" fill="none">
+        <path d="M2 20 C2 9 9 2 20 2" stroke={COLORS.gold} strokeWidth="1.1" strokeLinecap="round" opacity="0.75" />
+        <path d="M2 20 C2 13 5 9 11 8" stroke={COLORS.goldMatte} strokeWidth="0.8" strokeLinecap="round" opacity="0.5" />
+        <circle cx="20" cy="2" r="1.6" fill={COLORS.gold} opacity="0.85" />
+      </svg>
+    </span>
+  );
 });
 CornerBracket.displayName = 'CornerBracket';
 
 const Divider = React.memo(() => (
-  <div className="flex items-center justify-center gap-2 my-5 select-none" aria-hidden="true">
-    <span style={{ width: 36, height: 1, background: `linear-gradient(90deg, transparent, ${COLORS.moss})` }} />
-    <SparklesIcon size={12} style={{ color: COLORS.gold, opacity: 0.8 }} />
-    <span style={{ width: 36, height: 1, background: `linear-gradient(90deg, ${COLORS.moss}, transparent)` }} />
+  <div className="flex items-center justify-center gap-2.5 my-5 select-none" aria-hidden="true">
+    <span style={{ width: 40, height: 1, background: `linear-gradient(90deg, transparent, ${COLORS.moss})` }} />
+    <span style={{ display: 'inline-flex', animation: 'twinkle 3.5s ease-in-out infinite' }}>
+      <SparklesIcon size={13} style={{ color: COLORS.gold, opacity: 0.9 }} />
+    </span>
+    <span style={{ width: 40, height: 1, background: `linear-gradient(90deg, ${COLORS.moss}, transparent)` }} />
   </div>
 ));
 Divider.displayName = 'Divider';
@@ -544,9 +619,26 @@ const LaceMedallionTag = React.memo(() => {
 
   return (
     <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
+      <div
+        aria-hidden="true"
+        className="absolute rounded-full"
+        style={{
+          width: size + 22,
+          height: size + 22,
+          background: `radial-gradient(circle, ${COLORS.goldLight}66, transparent 70%)`,
+          filter: 'blur(7px)',
+        }}
+      />
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="absolute inset-0 drop-shadow-md">
-        <circle cx={c} cy={c} r={rOuter - 5} fill={COLORS.paper} stroke={COLORS.goldMatte} strokeWidth="0.9" />
-        <path d={d} fill="none" stroke={COLORS.goldMatte} strokeWidth="1" opacity="0.85" />
+        <defs>
+          <linearGradient id="medallionRing" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={COLORS.goldLight} />
+            <stop offset="50%" stopColor={COLORS.gold} />
+            <stop offset="100%" stopColor={COLORS.goldMatte} />
+          </linearGradient>
+        </defs>
+        <circle cx={c} cy={c} r={rOuter - 5} fill={COLORS.paper} stroke="url(#medallionRing)" strokeWidth="1.1" />
+        <path d={d} fill="none" stroke="url(#medallionRing)" strokeWidth="1" opacity="0.9" />
         {pts.map((p, i) => (
           <circle key={i} cx={p[0]} cy={p[1]} r="1.5" fill={COLORS.gold} opacity="0.8" />
         ))}
@@ -559,7 +651,7 @@ const LaceMedallionTag = React.memo(() => {
         </span>
         <span className="text-[7px] leading-tight text-gray-400 tracking-widest -my-0.5">&</span>
         <span className="text-[10px] leading-tight font-serif font-bold tracking-wide text-gray-700">
-          Mohammad
+          Mohammad Javad
         </span>
       </div>
     </div>
@@ -585,13 +677,14 @@ const Envelope = React.memo(({ phase, onOpen, guestName }) => {
       <button
         onClick={onOpen}
         disabled={phase !== 'closed'}
-        className="relative outline-none group cursor-pointer"
+        className="relative outline-none group cursor-pointer transition-transform duration-500 hover:scale-[1.015] focus-visible:scale-[1.015] focus-visible:ring-2 focus-visible:ring-offset-4 rounded-lg"
         style={{
           width: 360,
           height: 500,
           maxWidth: '90vw',
           maxHeight: '80vh',
           animation: phase === 'closed' ? 'floatY 6s ease-in-out infinite' : 'none',
+          '--tw-ring-color': COLORS.goldMatte,
         }}
       >
         <div
@@ -775,51 +868,165 @@ Envelope.displayName = 'Envelope';
    INVITATION CARD - اضافه شده
    ============================================================ */
 
-// کامپوننت نمایش نقشه واقعی با گوگل مپ
-// کامپوننت نمایش نقشه واقعی با گوگل مپ - نسخه ساده و مطمئن
+const MAP_LOCATION = {
+  lat: 31.8258,
+  lng: 54.3736,
+  name: weddingInfo.ceremonyLocationName,
+};
+
+const MAP_PROVIDERS = {
+  google: {
+    name: 'گوگل مپ',
+    icon: <MapPin size={14} />,
+    link: weddingInfo.mapLink,
+    embed: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4056.4867639029408!2d54.37363117613587!3d31.82582763198631!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3fa61ec2f947a14f%3A0x8549431694bc2ce0!2sRah%20O%20Ma%20Hotel%20%26%20Restaurant!5e1!3m2!1sen!2s!4v1786420538726!5m2!1sen!2s',
+    color: `linear-gradient(135deg, ${COLORS.sage}, ${COLORS.sageDark})`,
+    textColor: '#fffdf6',
+  },
+  neshan: {
+    name: 'نشان',
+    icon: <Navigation size={14} />,
+    link: 'https://neshan.org/maps/iframe/places/9c17738db9e2cf3f9bda990b3bb4bafa#c31.826-54.378-17z-0p/31.82598739999998/54.376135700000006',
+    embed: 'https://neshan.org/maps/iframe/places/9c17738db9e2cf3f9bda990b3bb4bafa#c31.826-54.378-17z-0p/31.82598739999998/54.376135700000006',
+    color: 'rgba(201,162,75,0.08)',
+    textColor: COLORS.ink,
+    border: true,
+  },
+  balad: {
+    name: 'بلد',
+    icon: <Navigation size={14} />,
+    link: weddingInfo.baladLink,
+    embed: 'https://balad.ir/embed?p=5sJhngNV76jR2a&zoom=18.5&marker=1&type=standard',
+    color: 'rgba(255,255,255,0.7)',
+    textColor: COLORS.sageDark,
+    border: true,
+  },
+};
+
 const RealMapPreview = React.memo(() => {
-  // استفاده از موقعیت پیش‌فرض (تهران)
-  const defaultLat = 35.6892;
-  const defaultLng = 51.3890;
-  
-  // تلاش برای استخراج مختصات از لینک
-  const getCoordinates = () => {
-    const match = weddingInfo.mapLink.match(/@([-+]?\d+\.\d+),([-+]?\d+\.\d+)/);
-    if (match) {
-      return { lat: parseFloat(match[1]), lng: parseFloat(match[2]) };
-    }
-    return { lat: defaultLat, lng: defaultLng };
+  const [showMap, setShowMap] = useState('neshan');
+
+  const location = {
+    lat: 31.8258,
+    lng: 54.3736,
+    name: weddingInfo.ceremonyLocationName
   };
-  
-  const coords = getCoordinates();
-  
-  // ساخت URL نقشه با استفاده از API ساده گوگل
-  const mapUrl = `https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4056.4867639029408!2d54.37363117613587!3d31.82582763198631!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3fa61ec2f947a14f%3A0x8549431694bc2ce0!2sRah%20O%20Ma%20Hotel%20%26%20Restaurant!5e1!3m2!1sen!2s!4v1786420538726!5m2!1sen!2s" width="300" height="200" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="strict-origin-when-cross-origin`;
+
+  const maps = {
+    google: {
+      name: 'گوگل مپ',
+      icon: <MapPin size={14} />,
+      link: weddingInfo.mapLink,
+      embed: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4056.4867639029408!2d54.37363117613587!3d31.82582763198631!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3fa61ec2f947a14f%3A0x8549431694bc2ce0!2sRah%20O%20Ma%20Hotel%20%26%20Restaurant!5e1!3m2!1sen!2s!4v1786420538726!5m2!1sen!2s',
+      navigateLink: `https://www.google.com/maps/dir/?api=1&destination=${location.lat},${location.lng}`,
+      navLabel: 'مسیریابی با گوگل مپ'
+    },
+    neshan: {
+      name: 'نشان',
+      icon: <Navigation size={14} />,
+      link: 'https://neshan.org/maps/iframe/places/9c17738db9e2cf3f9bda990b3bb4bafa#c31.826-54.378-17z-0p/31.82598739999998/54.376135700000006',
+      embed: 'https://neshan.org/maps/iframe/places/9c17738db9e2cf3f9bda990b3bb4bafa#c31.826-54.378-17z-0p/31.82598739999998/54.376135700000006',
+      navigateLink: `https://neshan.org/maps/direction?origin=my_location&destination=${location.lat},${location.lng}`,
+      navLabel: 'مسیریابی با نشان'
+    },
+    balad: {
+      name: 'بلد',
+      icon: <Navigation size={14} />,
+      link: weddingInfo.baladLink,
+      embed: 'https://balad.ir/embed?p=5sJhngNV76jR2a&zoom=18.5&marker=1&type=standard',
+      navigateLink: `https://balad.ir/direction?destination=${location.lat},${location.lng}`,
+      navLabel: 'مسیریابی با بلد'
+    }
+  };
+
+  const currentMap = maps[showMap];
+
   return (
-    <div className="relative w-full rounded-2xl overflow-hidden" style={{ height: 200, background: COLORS.linen }}>
-      <iframe
-        src={mapUrl}
-        width="100%"
-        height="100%"
-        style={{ border: 0, borderRadius: '12px' }}
-        allowFullScreen
-        loading="lazy"
-        referrerPolicy="no-referrer-when-downgrade"
-        title="نقشه مکان مراسم"
-      />
-      <div 
-        className="absolute bottom-2 left-2 right-2 flex justify-center pointer-events-none"
-        style={{ opacity: 0.6 }}
-      >
-        <span className="text-[10px] px-3 py-1 rounded-full bg-white/90 text-gray-600 shadow-md">
-          {weddingInfo.ceremonyLocationName}
+    <div className="relative w-full rounded-2xl overflow-hidden" style={{ height: 240, background: COLORS.linen }}>
+      {/* دکمه‌های تغییر نقشه */}
+      <div className="absolute top-2 left-2 z-10 flex gap-1.5">
+        {Object.entries(maps).map(([key, map]) => (
+          <button
+            key={key}
+            onClick={() => setShowMap(key)}
+            className={`px-3 py-1.5 text-[10px] font-medium rounded-full transition-all flex items-center gap-1 ${showMap === key
+              ? 'bg-white/95 shadow-lg text-gray-800'
+              : 'bg-white/50 backdrop-blur-sm text-gray-500 hover:bg-white/80'
+              }`}
+            style={{ border: '1px solid rgba(255,255,255,0.3)' }}
+          >
+            {map.icon}
+            {map.name}
+          </button>
+        ))}
+      </div>
+
+      {/* نقشه انتخابی */}
+      {showMap === 'google' && (
+        <iframe
+          src={maps.google.embed}
+          width="100%"
+          height="100%"
+          style={{ border: 0 }}
+          allowFullScreen
+          loading="lazy"
+          referrerPolicy="no-referrer-when-downgrade"
+          title="نقشه گوگل مکان مراسم"
+        />
+      )}
+
+      {showMap === 'neshan' && (
+        <iframe
+          src={maps.neshan.embed}
+          width="100%"
+          height="100%"
+          style={{ border: 0 }}
+          allowFullScreen
+          loading="lazy"
+          title="نقشه نشان مکان مراسم"
+        />
+      )}
+
+      {showMap === 'balad' && (
+        <iframe
+          src={maps.balad.embed}
+          width="100%"
+          height="100%"
+          style={{ border: 0 }}
+          allowFullScreen
+          loading="lazy"
+          title="نقشه بلد مکان مراسم"
+        />
+      )}
+
+      {/* دکمه‌های پایین - به صورت یک ردیف */}
+      <div className="absolute bottom-3 left-2 right-2 z-10 flex items-center justify-center gap-2 pointer-events-none">
+        {/* دکمه مسیریابی */}
+        <a
+          href={currentMap.navigateLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex-1 max-w-[200px] text-[10px] px-3 py-2 rounded-full shadow-md pointer-events-auto transition-all flex items-center justify-center gap-1.5 bg-amber-600 text-white hover:bg-amber-700 hover:scale-105"
+          style={{
+            boxShadow: '0 4px 12px rgba(201,162,75,0.3)',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Navigation size={13} />
+          {currentMap.navLabel}
+        </a>
+      </div>
+
+      {/* نام مکان */}
+      <div className="absolute top-2 right-2 pointer-events-none z-10">
+        <span className="text-[10px] px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-sm text-white/90 shadow-md">
+          {location.name}
         </span>
       </div>
     </div>
   );
 });
 RealMapPreview.displayName = 'RealMapPreview';
-
 // کامپوننت نمایش پیام‌های مهمانان
 const GuestMessages = React.memo(() => {
   const { messages, loading, lastUpdated } = useGuestMessages();
@@ -886,7 +1093,7 @@ const GuestMessages = React.memo(() => {
           >
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white" style={{ background: COLORS.sage }}>
+                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0" style={{ background: nameToAvatarGradient(msg.from) }}>
                   {msg.from.charAt(0)}
                 </div>
                 <span className="text-sm font-medium" style={{ color: COLORS.sageDark }}>
@@ -902,8 +1109,6 @@ const GuestMessages = React.memo(() => {
               {msg.text}
             </p>
             <div className="flex items-center gap-1 mt-1 pr-8">
-              
-
             </div>
           </div>
         ))}
@@ -992,39 +1197,10 @@ function InvitationCard({ visible, onReset, guestName }) {
             {/* نقشه واقعی گوگل */}
             <RealMapPreview />
 
-            <div className="flex flex-wrap items-center justify-center gap-2.5 w-full">
-              <a
-                href={weddingInfo.mapLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-xs font-semibold tracking-wide transition-all hover:scale-[1.03] hover:shadow-xl"
-                style={{
-                  background: `linear-gradient(135deg, ${COLORS.sage}, ${COLORS.sageDark})`,
-                  color: '#fffdf6',
-                  boxShadow: '0 8px 20px rgba(86,102,77,0.3)'
-                }}
-              >
-                <MapPin size={14} /> نقشه گوگل
-              </a>
-              <a
-                href={weddingInfo.baladLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex-1 min-w-[120px] inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-xs font-semibold tracking-wide border transition-all hover:scale-[1.03] hover:shadow-lg"
-                style={{
-                  borderColor: COLORS.goldMatte,
-                  color: COLORS.ink,
-                  background: 'rgba(201,162,75,0.06)',
-                }}
-              >
-                <Navigation size={13} /> مسیریاب بلد
-              </a>
-            </div>
-
             {/* پیام‌های مهمانان */}
             <GuestMessages />
 
-            <MessageSender guestName={guestName}/>
+            <MessageSender guestName={guestName} />
           </div>
         </div>
       </div>
@@ -1365,7 +1541,7 @@ function PhotoGallery() {
 
   useEffect(() => {
     abortControllerRef.current = new AbortController();
-    
+
     const loadPhotos = async () => {
       const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
       const existingPhotos = [];
@@ -1376,7 +1552,7 @@ function PhotoGallery() {
         const promises = batch.map(async (letter) => {
           try {
             const url = `/images/${letter}.webp`;
-            const response = await fetch(url, { 
+            const response = await fetch(url, {
               method: 'HEAD',
               signal: abortControllerRef.current.signal
             });
@@ -1491,14 +1667,13 @@ function PhotoGallery() {
                   }}
                 >
                   <div className="group relative overflow-hidden" style={{ aspectRatio: '3 / 4', background: COLORS.linen }}>
-                    <div
-                      className="w-full h-full absolute inset-0 transition-transform duration-700 group-hover:scale-110"
-                      style={{
-                        backgroundImage: `url(${photoUrl})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center',
-                        pointerEvents: 'none',
-                      }}
+                    <img
+                      src={photoUrl}
+                      alt={`عکس یادگاری شماره ${toFa(idx + 1)}`}
+                      loading="lazy"
+                      decoding="async"
+                      draggable="false"
+                      className="w-full h-full absolute inset-0 object-cover transition-transform duration-700 group-hover:scale-110 pointer-events-none select-none"
                     />
 
                     <div className="absolute inset-0 z-10 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-3">
@@ -1652,6 +1827,19 @@ const Petals = React.memo(() => {
 });
 Petals.displayName = 'Petals';
 
+const NoiseOverlay = React.memo(() => (
+  <div
+    aria-hidden="true"
+    className="absolute inset-0 pointer-events-none mix-blend-overlay"
+    style={{
+      opacity: 0.035,
+      backgroundImage:
+        "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+    }}
+  />
+));
+NoiseOverlay.displayName = 'NoiseOverlay';
+
 const Twinkles = React.memo(() => {
   const stars = useMemo(() => Array.from({ length: 20 }).map((_, i) => ({
     id: i,
@@ -1767,9 +1955,15 @@ export default function WeddingInvitation() {
       }}
     >
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap');
+
         @keyframes floatY {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-10px); }
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-10px) rotate(0.6deg); }
+        }
+        @keyframes urgentPulse {
+          0%, 100% { box-shadow: 0 2px 14px rgba(201,162,75,0.18), inset 0 1px 0 rgba(255,255,255,0.4); }
+          50% { box-shadow: 0 2px 22px rgba(201,162,75,0.38), inset 0 1px 0 rgba(255,255,255,0.5); }
         }
         @keyframes petalFall {
           0% { transform: translateY(-10vh) translateX(0) rotate(0deg); opacity: 0; }
@@ -1807,6 +2001,7 @@ export default function WeddingInvitation() {
           0% { transform: translate(0, 0) scale(0) rotate(0deg); opacity: 1; }
           100% { transform: translate(var(--x), var(--y)) scale(1) rotate(180deg); opacity: 0; }
         }
+          
         .animate-fadeIn {
           animation: fadeIn 0.3s ease-out forwards;
         }
@@ -1837,6 +2032,14 @@ export default function WeddingInvitation() {
           background: #c2cdbb;
           border-radius: 10px;
         }
+        @media (prefers-reduced-motion: reduce) {
+          *, *::before, *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+            scroll-behavior: auto !important;
+          }
+        }
       `}</style>
 
       <HeartBubbles />
@@ -1857,6 +2060,7 @@ export default function WeddingInvitation() {
           background: `radial-gradient(circle at 50% 45%, transparent 40%, ${COLORS.sageLight} 100%)`,
           opacity: 0.15
         }} />
+        <NoiseOverlay />
 
         <Petals />
         <Twinkles />
