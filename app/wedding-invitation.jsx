@@ -64,7 +64,6 @@ const toFa = (input) => {
   return String(input).replace(/[0-9]/g, (d) => map[d]);
 };
 
-// رنگ ثابت و قابل پیش‌بینی برای هر نام، برای تنوع بصری آواتار مهمانان
 const nameToAvatarGradient = (name = '') => {
   let hash = 0;
   for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -219,7 +218,6 @@ function useGuestMessages() {
         }
       })
       .catch(() => {
-        // در صورت خطا، از داده‌های نمونه استفاده کن
         setMessages([
           { id: 1, from: 'عارفه', text: 'آمادهام مجلس رو بفرستم هوا! 💃🕺', date: '۱۴۰۳/۰۵/۱۷ - ۱۷:۲۹' },
           { id: 2, from: 'محمد', text: 'حتماً میام با هدیه و رقص 🕺🎁', date: '۱۴۰۳/۰۵/۱۷ - ۱۱:۲۳' },
@@ -418,7 +416,6 @@ const GlowingCountdown = React.memo(() => {
             animation: isUrgent ? 'urgentPulse 1.8s ease-in-out infinite' : 'none',
           }}
         >
-          {/* عدد با رنگ طلایی و سایز کوچک */}
           <span
             className="text-lg sm:text-xl font-bold tracking-wide tabular-nums"
             style={{
@@ -429,8 +426,6 @@ const GlowingCountdown = React.memo(() => {
           >
             {toFa(item.value)}
           </span>
-
-          {/* برچسب با فونت کوچک‌تر */}
           <span
             className="text-[8px] sm:text-[9px] mt-0.5 font-light tracking-widest"
             style={{
@@ -441,8 +436,6 @@ const GlowingCountdown = React.memo(() => {
           >
             {item.label}
           </span>
-
-          {/* نقطه تزیینی کوچک */}
           <div
             className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full"
             style={{
@@ -456,6 +449,7 @@ const GlowingCountdown = React.memo(() => {
   );
 });
 GlowingCountdown.displayName = 'GlowingCountdown';
+
 const CORNER_ROTATION = { tl: 0, tr: 90, br: 180, bl: 270 };
 const CORNER_POSITION = {
   tl: { top: -9, left: -9 },
@@ -520,7 +514,6 @@ BotanicalPatternSVG.displayName = 'BotanicalPatternSVG';
    طرح‌های دانتل (Lace)
    ============================================================ */
 
-// بافت توری/دانتل - برای رویه پاکت
 const LaceNetPattern = React.memo(({ id, opacity = 0.4, color = '#fffdf6' }) => (
   <svg
     width="100%"
@@ -557,7 +550,6 @@ const LaceNetPattern = React.memo(({ id, opacity = 0.4, color = '#fffdf6' }) => 
 ));
 LaceNetPattern.displayName = 'LaceNetPattern';
 
-// نوار حاشیه دانتل (طرح هلالی گیپور) - برای لبه‌های پاکت و روبان
 const LaceScallopBorder = React.memo(({ count = 16, flip = false, color = '#fffdf6', opacity = 0.95, tone }) => {
   const width = 400;
   const sw = width / count;
@@ -599,7 +591,6 @@ const LaceScallopBorder = React.memo(({ count = 16, flip = false, color = '#fffd
 });
 LaceScallopBorder.displayName = 'LaceScallopBorder';
 
-// مدال دانتل گرد - جایگزین انگ کاغذی روی روبان
 const LaceMedallionTag = React.memo(() => {
   const size = 108;
   const c = size / 2;
@@ -865,43 +856,8 @@ const Envelope = React.memo(({ phase, onOpen, guestName }) => {
 Envelope.displayName = 'Envelope';
 
 /* ============================================================
-   INVITATION CARD - اضافه شده
+   INVITATION CARD
    ============================================================ */
-
-const MAP_LOCATION = {
-  lat: 31.8258,
-  lng: 54.3736,
-  name: weddingInfo.ceremonyLocationName,
-};
-
-const MAP_PROVIDERS = {
-  google: {
-    name: 'گوگل مپ',
-    icon: <MapPin size={14} />,
-    link: weddingInfo.mapLink,
-    embed: 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d4056.4867639029408!2d54.37363117613587!3d31.82582763198631!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3fa61ec2f947a14f%3A0x8549431694bc2ce0!2sRah%20O%20Ma%20Hotel%20%26%20Restaurant!5e1!3m2!1sen!2s!4v1786420538726!5m2!1sen!2s',
-    color: `linear-gradient(135deg, ${COLORS.sage}, ${COLORS.sageDark})`,
-    textColor: '#fffdf6',
-  },
-  neshan: {
-    name: 'نشان',
-    icon: <Navigation size={14} />,
-    link: 'https://neshan.org/maps/iframe/places/9c17738db9e2cf3f9bda990b3bb4bafa#c31.826-54.378-17z-0p/31.82598739999998/54.376135700000006',
-    embed: 'https://neshan.org/maps/iframe/places/9c17738db9e2cf3f9bda990b3bb4bafa#c31.826-54.378-17z-0p/31.82598739999998/54.376135700000006',
-    color: 'rgba(201,162,75,0.08)',
-    textColor: COLORS.ink,
-    border: true,
-  },
-  balad: {
-    name: 'بلد',
-    icon: <Navigation size={14} />,
-    link: weddingInfo.baladLink,
-    embed: 'https://balad.ir/embed?p=5sJhngNV76jR2a&zoom=18.5&marker=1&type=standard',
-    color: 'rgba(255,255,255,0.7)',
-    textColor: COLORS.sageDark,
-    border: true,
-  },
-};
 
 const RealMapPreview = React.memo(() => {
   const [showMap, setShowMap] = useState('neshan');
@@ -943,7 +899,6 @@ const RealMapPreview = React.memo(() => {
 
   return (
     <div className="relative w-full rounded-2xl overflow-hidden" style={{ height: 240, background: COLORS.linen }}>
-      {/* دکمه‌های تغییر نقشه */}
       <div className="absolute top-2 left-2 z-10 flex gap-1.5">
         {Object.entries(maps).map(([key, map]) => (
           <button
@@ -961,7 +916,6 @@ const RealMapPreview = React.memo(() => {
         ))}
       </div>
 
-      {/* نقشه انتخابی */}
       {showMap === 'google' && (
         <iframe
           src={maps.google.embed}
@@ -999,9 +953,7 @@ const RealMapPreview = React.memo(() => {
         />
       )}
 
-      {/* دکمه‌های پایین - به صورت یک ردیف */}
       <div className="absolute bottom-3 left-2 right-2 z-10 flex items-center justify-center gap-2 pointer-events-none">
-        {/* دکمه مسیریابی */}
         <a
           href={currentMap.navigateLink}
           target="_blank"
@@ -1017,7 +969,6 @@ const RealMapPreview = React.memo(() => {
         </a>
       </div>
 
-      {/* نام مکان */}
       <div className="absolute top-2 right-2 pointer-events-none z-10">
         <span className="text-[10px] px-3 py-1.5 rounded-full bg-black/40 backdrop-blur-sm text-white/90 shadow-md">
           {location.name}
@@ -1027,6 +978,7 @@ const RealMapPreview = React.memo(() => {
   );
 });
 RealMapPreview.displayName = 'RealMapPreview';
+
 // کامپوننت نمایش پیام‌های مهمانان
 const GuestMessages = React.memo(() => {
   const { messages, loading, lastUpdated } = useGuestMessages();
@@ -1108,8 +1060,6 @@ const GuestMessages = React.memo(() => {
             <p className="text-sm text-gray-700 leading-relaxed pr-8" style={{ direction: 'rtl' }}>
               {msg.text}
             </p>
-            <div className="flex items-center gap-1 mt-1 pr-8">
-            </div>
           </div>
         ))}
       </div>
@@ -1194,12 +1144,8 @@ function InvitationCard({ visible, onReset, guestName }) {
             background: `linear-gradient(0deg, ${COLORS.paper}, #f8f6f0)`,
             borderTop: `1px solid ${COLORS.bone}`
           }}>
-            {/* نقشه واقعی گوگل */}
             <RealMapPreview />
-
-            {/* پیام‌های مهمانان */}
             <GuestMessages />
-
             <MessageSender guestName={guestName} />
           </div>
         </div>
@@ -1867,6 +1813,104 @@ const Twinkles = React.memo(() => {
 Twinkles.displayName = 'Twinkles';
 
 /* ============================================================
+   جلوگیری از اسکرین‌شات و کپی
+   ============================================================ */
+
+function preventScreenCapture() {
+  if (typeof window === 'undefined') return;
+
+  // جلوگیری از Print Screen و کلیدهای میانبر
+  const handleKeyDown = (e) => {
+    // کلید Print Screen
+    if (e.key === 'PrintScreen') {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    }
+    
+    // Ctrl + Shift + S (اسکرین‌شات در برخی ابزارها)
+    if (e.ctrlKey && e.shiftKey && (e.key === 's' || e.key === 'S')) {
+      e.preventDefault();
+      return false;
+    }
+    
+    // Ctrl + P (چاپ صفحه)
+    if (e.ctrlKey && (e.key === 'p' || e.key === 'P')) {
+      e.preventDefault();
+      return false;
+    }
+    
+    // Ctrl + S (ذخیره صفحه)
+    if (e.ctrlKey && (e.key === 's' || e.key === 'S')) {
+      e.preventDefault();
+      return false;
+    }
+    
+    // Ctrl + U (مشاهده سورس)
+    if (e.ctrlKey && (e.key === 'u' || e.key === 'U')) {
+      e.preventDefault();
+      return false;
+    }
+    
+    // F12 (developer tools)
+    if (e.key === 'F12') {
+      e.preventDefault();
+      return false;
+    }
+  };
+
+  // جلوگیری از Context Menu (کلیک راست)
+  const handleContextMenu = (e) => {
+    if (e.target.closest('.gallery-image-container') || 
+        e.target.closest('.gallery-modal') ||
+        e.target.tagName === 'IMG') {
+      e.preventDefault();
+      return false;
+    }
+  };
+
+  // جلوگیری از Drag
+  const handleDragStart = (e) => {
+    if (e.target.tagName === 'IMG' || 
+        e.target.closest('.gallery-image-container') || 
+        e.target.closest('.gallery-modal')) {
+      e.preventDefault();
+      return false;
+    }
+  };
+
+  // جلوگیری از Select
+  const handleSelectStart = (e) => {
+    e.preventDefault();
+    return false;
+  };
+
+  // جلوگیری از کپی
+  const handleCopy = (e) => {
+    if (e.target.closest('.gallery-image-container') || 
+        e.target.closest('.gallery-modal') ||
+        e.target.tagName === 'IMG') {
+      e.preventDefault();
+      return false;
+    }
+  };
+
+  document.addEventListener('keydown', handleKeyDown);
+  document.addEventListener('contextmenu', handleContextMenu);
+  document.addEventListener('dragstart', handleDragStart);
+  document.addEventListener('selectstart', handleSelectStart);
+  document.addEventListener('copy', handleCopy);
+
+  return () => {
+    document.removeEventListener('keydown', handleKeyDown);
+    document.removeEventListener('contextmenu', handleContextMenu);
+    document.removeEventListener('dragstart', handleDragStart);
+    document.removeEventListener('selectstart', handleSelectStart);
+    document.removeEventListener('copy', handleCopy);
+  };
+}
+
+/* ============================================================
    کامپوننت اصلی
    ============================================================ */
 export default function WeddingInvitation() {
@@ -1876,6 +1920,12 @@ export default function WeddingInvitation() {
   const music = useRomanticMusic();
   const playPaperSound = usePaperSound();
   const guestName = useGuestName();
+
+  // اجرای قفل‌های امنیتی
+  useEffect(() => {
+    const cleanup = preventScreenCapture();
+    return cleanup;
+  }, []);
 
   const handleOpen = useCallback(() => {
     if (phase !== 'closed') return;
@@ -1956,6 +2006,46 @@ export default function WeddingInvitation() {
     >
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap');
+
+        /* جلوگیری از انتخاب و کپی */
+        * {
+          -webkit-user-select: none !important;
+          -moz-user-select: none !important;
+          -ms-user-select: none !important;
+          user-select: none !important;
+          -webkit-touch-callout: none !important;
+        }
+
+        /* جلوگیری از درگ کردن تصاویر */
+        img, video, canvas {
+          -webkit-user-drag: none !important;
+          user-drag: none !important;
+          -webkit-touch-callout: none !important;
+          pointer-events: auto;
+        }
+
+        /* مخفی کردن متن انتخاب‌شده */
+        ::selection {
+          background: transparent !important;
+          color: inherit !important;
+        }
+
+        ::-moz-selection {
+          background: transparent !important;
+          color: inherit !important;
+        }
+
+        /* جلوگیری از نمایش در پرینت */
+        @media print {
+          body * {
+            visibility: hidden !important;
+          }
+          .gallery-image-container,
+          .gallery-modal {
+            visibility: hidden !important;
+            display: none !important;
+          }
+        }
 
         @keyframes floatY {
           0%, 100% { transform: translateY(0) rotate(0deg); }
