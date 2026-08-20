@@ -71,14 +71,16 @@ const nameToAvatarGradient = (name = '') => {
   return `linear-gradient(135deg, hsl(${hue}, 32%, 52%), hsl(${(hue + 35) % 360}, 28%, 38%))`;
 };
 
-function useCountdown(targetISO) {
+function useCountdown(targetISO, active = true) {
   const target = useMemo(() => new Date(targetISO).getTime(), [targetISO]);
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
+    if (!active) return;
+    setNow(Date.now());
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [active]);
 
   const diff = Math.max(target - now, 0);
   return useMemo(() => ({
@@ -372,8 +374,8 @@ const HeartBubbles = React.memo(() => {
 HeartBubbles.displayName = 'HeartBubbles';
 
 // 4. کرونومتر
-const GlowingCountdown = React.memo(() => {
-  const { days, hours, minutes, seconds, isOver } = useCountdown(weddingInfo.weddingDateTime);
+const GlowingCountdown = React.memo(({ countdown }) => {
+  const { days, hours, minutes, seconds, isOver } = countdown;
 
   const items = useMemo(() => [
     { value: days, label: 'روز' },
@@ -1068,8 +1070,8 @@ const GuestMessages = React.memo(() => {
 });
 GuestMessages.displayName = 'GuestMessages';
 
-function InvitationCard({ visible, onReset, guestName }) {
-  const { days, hours, minutes, seconds, isOver } = useCountdown(weddingInfo.weddingDateTime);
+function InvitationCard({ visible, onReset, guestName, countdown }) {
+  const { isOver } = countdown;
 
   return (
     <div
@@ -1137,7 +1139,7 @@ function InvitationCard({ visible, onReset, guestName }) {
             <span className="text-xs font-medium tracking-[0.2em] uppercase" style={{ color: COLORS.sageDark }}>
               {isOver ? '🎉 مراسم آغاز شد' : '⏳ زمان تا شروع مراسم'}
             </span>
-            {!isOver && <GlowingCountdown />}
+            {!isOver && <GlowingCountdown countdown={countdown} />}
           </div>
 
           <div className="flex flex-col items-center gap-4 py-6 px-6" style={{
@@ -1478,53 +1480,23 @@ HeartButton.displayName = 'HeartButton';
 
 /* ---------------- PhotoGallery ---------------- */
 const polaroidRotations = [-6, 4, -3, 7, -4, 3, -7, 5];
+const GALLERY_LETTERS = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+const CANDIDATE_PHOTOS = GALLERY_LETTERS.map((letter) => `/images/${letter}.webp`);
 
 function PhotoGallery() {
-  const [photos, setPhotos] = useState([]);
+  // به‌جای پینگ گرفتن (HEAD) از هر عکس قبل از نمایش - که یک دور رفت‌وبرگشت شبکه
+  // اضافه و کند قبل از نمایش هر تصویری ایجاد می‌کرد - عکس‌ها بلافاصله رندر
+  // می‌شوند و فقط عکس‌های واقعاً معیوب با onError از لیست حذف می‌شوند.
+  const [failedPhotos, setFailedPhotos] = useState(() => new Set());
   const [activePhotoIndex, setActivePhotoIndex] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const abortControllerRef = useRef(null);
 
-  useEffect(() => {
-    abortControllerRef.current = new AbortController();
+  const photos = useMemo(
+    () => CANDIDATE_PHOTOS.filter((url) => !failedPhotos.has(url)),
+    [failedPhotos]
+  );
 
-    const loadPhotos = async () => {
-      const letters = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-      const existingPhotos = [];
-      const batchSize = 4;
-
-      for (let i = 0; i < letters.length; i += batchSize) {
-        const batch = letters.slice(i, i + batchSize);
-        const promises = batch.map(async (letter) => {
-          try {
-            const url = `/images/${letter}.webp`;
-            const response = await fetch(url, {
-              method: 'HEAD',
-              signal: abortControllerRef.current.signal
-            });
-            if (response.ok) {
-              return url;
-            }
-          } catch (error) {
-            if (error.name === 'AbortError') return null;
-          }
-          return null;
-        });
-
-        const results = await Promise.all(promises);
-        existingPhotos.push(...results.filter(Boolean));
-      }
-
-      setPhotos(existingPhotos);
-      setLoading(false);
-    };
-
-    loadPhotos();
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
+  const handlePhotoError = useCallback((url) => {
+    setFailedPhotos((prev) => (prev.has(url) ? prev : new Set(prev).add(url)));
   }, []);
 
   useEffect(() => {
@@ -1591,7 +1563,7 @@ function PhotoGallery() {
       <Divider />
 
       <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-6 sm:gap-8 w-full max-w-[650px] px-2">
-        {!loading && photos.length > 0 ? (
+        {photos.length > 0 ? (
           photos.map((photoUrl, idx) => {
             const rotate = polaroidRotations[idx % polaroidRotations.length];
             return (
@@ -1619,6 +1591,7 @@ function PhotoGallery() {
                       loading="lazy"
                       decoding="async"
                       draggable="false"
+                      onError={() => handlePhotoError(photoUrl)}
                       className="w-full h-full absolute inset-0 object-cover transition-transform duration-700 group-hover:scale-110 pointer-events-none select-none"
                     />
 
@@ -1655,7 +1628,7 @@ function PhotoGallery() {
             >
               <Heart size={28} style={{ color: COLORS.sage, opacity: 0.5 }} className="animate-pulse mb-2" />
               <span className="text-xs" style={{ color: COLORS.sageDark }}>
-                {loading ? 'در حال بارگذاری...' : 'عکس‌های یادگاری'}
+                عکس‌های یادگاری
               </span>
             </div>
           ))
@@ -1921,10 +1894,36 @@ export default function WeddingInvitation() {
   const playPaperSound = usePaperSound();
   const guestName = useGuestName();
 
+  // تایمر شمارش معکوس فقط یک بار در بالاترین سطح ساخته می‌شود و فقط وقتی
+  // پاکت باز شده تیک می‌خورد (قبل از باز شدن نیازی به آپدیت هر ثانیه نیست)
+  const countdown = useCountdown(weddingInfo.weddingDateTime, phase !== 'closed');
+
   // اجرای قفل‌های امنیتی
   useEffect(() => {
     const cleanup = preventScreenCapture();
     return cleanup;
+  }, []);
+
+  // بارگذاری فونت به‌صورت غیرمسدودکننده (به‌جای @import داخل <style> که رندر را کند می‌کند)
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    if (document.getElementById('vazirmatn-font-link')) return;
+
+    const preconnect1 = document.createElement('link');
+    preconnect1.rel = 'preconnect';
+    preconnect1.href = 'https://fonts.googleapis.com';
+
+    const preconnect2 = document.createElement('link');
+    preconnect2.rel = 'preconnect';
+    preconnect2.href = 'https://fonts.gstatic.com';
+    preconnect2.crossOrigin = 'anonymous';
+
+    const link = document.createElement('link');
+    link.id = 'vazirmatn-font-link';
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap';
+
+    document.head.append(preconnect1, preconnect2, link);
   }, []);
 
   const handleOpen = useCallback(() => {
@@ -1997,15 +1996,20 @@ export default function WeddingInvitation() {
   return (
     <div
       dir="rtl"
-      className="relative w-full min-h-screen overflow-hidden"
+      className="relative w-full min-h-screen overflow-x-hidden"
       style={{
         fontFamily: "'Vazirmatn', Tahoma, sans-serif",
         height: phase !== 'open' ? '100vh' : 'auto',
-        overflow: phase !== 'open' ? 'hidden' : 'visible',
+        overflowX: 'hidden',
+        overflowY: phase !== 'open' ? 'hidden' : 'visible',
+        maxWidth: '100vw',
       }}
     >
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&display=swap');
+        html, body {
+          overflow-x: hidden;
+          max-width: 100%;
+        }
 
         /* جلوگیری از انتخاب و کپی */
         * {
@@ -2177,7 +2181,7 @@ export default function WeddingInvitation() {
 
         <div className="relative z-10 w-full flex items-center justify-center" style={{ minHeight: 520 }}>
           <Envelope phase={phase} onOpen={handleOpen} guestName={guestName} />
-          <InvitationCard visible={phase === 'open'} onReset={handleReset} guestName={guestName} />
+          <InvitationCard visible={phase === 'open'} onReset={handleReset} guestName={guestName} countdown={countdown} />
         </div>
       </div>
 
