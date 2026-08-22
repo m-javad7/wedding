@@ -13,7 +13,11 @@ const geistMono = Geist_Mono({
 
 export const metadata = {
   title: "کارت دعوت",
-  description: "یک شب، یک آغاز و هزار آرزوی شیرین پیش روی ماست; کنارمان باشید تا این آغاز، خاطره ای برای همیشه شود.",
+  description: "یک شب، یک آغاز و هزار آرزوی شیرین پیش روی ماست; کنارمان باشید تا این آغاز، خاطره‌ای برای همیشه شود.",
+  openGraph: {
+    title: "کارت دعوت",
+    description: "یک شب، یک آغاز و هزار آرزوی شیرین پیش روی ماست; کنارمان باشید تا این آغاز، خاطره‌ای برای همیشه شود.",
+  },
 };
 
 export default function RootLayout({ children }) {
@@ -31,7 +35,10 @@ export default function RootLayout({ children }) {
         {/* جلوگیری از اسکرین‌شات در iOS */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-
+        <meta name="apple-touch-fullscreen" content="yes" />
+        <meta property="og:type" content="website" />
+        <meta property="og:locale" content="fa_IR" />
+        <meta property="og:site_name" content="کارت دعوت" />
         {/* جلوگیری از درگ و انتخاب */}
         <style>{`
           * {
