@@ -209,23 +209,51 @@ function useGuestMessages() {
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState('');
 
+  // تابع تبدیل تاریخ و زمان فارسی به عدد
+  const convertToTimestamp = (persianDateTime) => {
+    if (!persianDateTime) return 0;
+    
+    const [datePart, timePart] = persianDateTime.split(' - ');
+    if (!datePart || !timePart) return 0;
+    
+    const dateParts = datePart.split('/');
+    const timeParts = timePart.split(':');
+    
+    if (dateParts.length === 3 && timeParts.length === 2) {
+      // سال * ۱۰۰۰۰۰۰ + ماه * ۱۰۰۰۰ + روز * ۱۰۰ + ساعت * ۱۰ + دقیقه
+      return (
+        parseInt(dateParts[0]) * 1000000 +
+        parseInt(dateParts[1]) * 10000 +
+        parseInt(dateParts[2]) * 100 +
+        parseInt(timeParts[0]) * 10 +
+        parseInt(timeParts[1])
+      );
+    }
+    return 0;
+  };
+
   useEffect(() => {
     let cancelled = false;
     fetch(weddingInfo.messagesFile)
       .then((r) => (r.ok ? r.json() : Promise.reject()))
       .then((data) => {
         if (!cancelled && data?.messages) {
-          setMessages(data.messages);
+          // مرتب‌سازی با زمان کامل
+          const sorted = [...data.messages].sort((a, b) => {
+            return convertToTimestamp(b.date) - convertToTimestamp(a.date);
+          });
+          setMessages(sorted);
           if (data.lastUpdated) setLastUpdated(data.lastUpdated);
         }
       })
       .catch(() => {
-        setMessages([
-          { id: 1, from: 'عارفه', text: 'آمادهام مجلس رو بفرستم هوا! 💃🕺', date: '۱۴۰۳/۰۵/۱۷ - ۱۷:۲۹' },
-          { id: 2, from: 'محمد', text: 'حتماً میام با هدیه و رقص 🕺🎁', date: '۱۴۰۳/۰۵/۱۷ - ۱۱:۲۳' },
-          { id: 3, from: 'سارا', text: 'تبریک به شما عزیزان! بهترین آرزوها رو براتون دارم 💝', date: '۱۴۰۳/۰۵/۱۶ - ۲۰:۱۵' },
-        ]);
-        setLastUpdated('۱۴۰۳/۰۵/۱۷');
+        const fallback = [
+          { id: 2, from: 'محمد', text: 'حتماً میام با هدیه و رقص 🕺🎁', date: '۱۴۰۳/۰۵/۱۷ - ۱۰:۲۳' },
+        ];
+        setMessages([...fallback].sort((a, b) => 
+          convertToTimestamp(b.date) - convertToTimestamp(a.date)
+        ));
+        setLastUpdated('۱۴۰۵/۰۵/۱۷');
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -235,7 +263,6 @@ function useGuestMessages() {
 
   return { messages, loading, lastUpdated };
 }
-
 /* ============================================================
    کامپوننت‌ها
    ============================================================ */
